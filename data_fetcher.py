@@ -133,24 +133,22 @@ def fetch_with_retry(symbol):
     Kademeli veri çekme yöntemi:
     1. 1 Yıllık (Haftalık/Aylık hesaplamalar için ideal)
     2. 1 Aylık (Haftalık hesaplama için yeterli)
-    3. 5 Günlük (Sadece güncel fiyat için - Test kodunun başarılı olduğu periyot)
+    3. 5 Günlük (Garantili yakın geçmiş)
+    4. 1 Günlük (Sadece güncel fiyat için - En son çare)
     """
     try:
         ticker = yf.Ticker(symbol)
         
-        # Try 1 Year first
-        hist = ticker.history(period="1y")
-        is_fallback = False
+        # Try different periods in order
+        periods = ["1y", "1mo", "5d", "1d"]
+        hist = None
         
-        if hist.empty or len(hist) < 2:
-            print(f"  ! {symbol}: 1-year failed, trying 1-month...")
-            hist = ticker.history(period="1mo")
-            if hist.empty or len(hist) < 2:
-                print(f"  !! {symbol}: 1-month failed, trying 5-day...")
-                hist = ticker.history(period="5d")
-                is_fallback = True
+        for p in periods:
+            hist = ticker.history(period=p)
+            if not hist.empty and len(hist) >= 1:
+                break
 
-        if hist.empty:
+        if hist is None or hist.empty:
             return None
             
         # Clean timezone
@@ -158,7 +156,7 @@ def fetch_with_retry(symbol):
             hist.index = hist.index.tz_localize(None)
         
         closes = hist['Close'].dropna()
-        if len(closes) < 2:
+        if len(closes) < 1:
             return None
 
         curr_price = float(closes.iloc[-1])
@@ -166,30 +164,27 @@ def fetch_with_retry(symbol):
         
         def get_p(days_back):
             try:
-                # If we are in fallback (5-day), we can't look back 30 or 90 days.
+                # If we only have 1 day of data, we return current price (no change)
+                if len(closes) < 2:
+                    return curr_price
                 target = last_date - timedelta(days=days_back)
                 idx = closes.index.asof(target)
                 if pd.isna(idx):
-                    return float(closes.iloc[0]) # Fallback to oldest available
+                    return float(closes.iloc[0]) 
                 return float(closes.loc[idx])
             except:
                 return float(closes.iloc[0])
 
-        p1d = float(closes.iloc[-2])
+        # Default values for stats if we don't have enough history
+        p1d = closes.iloc[-2] if len(closes) >= 2 else curr_price
         p1w = get_p(7)
         p1m = get_p(30)
         p3m = get_p(90)
 
         # Percentage calculation helper
         def pct(new, old):
-            if not old or old == 0: return 0
-            val = round(((new - old) / old) * 100, 2)
-            # If we only have 5 days of data, 1m and 3m changes might be 
-            # misleadingly based on the 1st day of those 5 days.
-            return val
-
-        # Handle weight (yfinance doesn't provide this directly, using placeholder)
-        weight = None 
+            if not old or old == 0 or new == old: return 0
+            return round(((new - old) / old) * 100, 2)
 
         vol = float(hist['Volume'].iloc[-1]) if 'Volume' in hist.columns else 0
 
@@ -200,7 +195,7 @@ def fetch_with_retry(symbol):
             'change_1m': pct(curr_price, p1m),
             'change_3m': pct(curr_price, p3m),
             'volume': f"{round(vol / 1_000_000, 1)}M",
-            'weight': weight
+            'weight': None 
         }
     except Exception as e:
         print(f"Critical error fetching {symbol}: {e}")
@@ -213,7 +208,7 @@ def chunk_list(lst, n):
 # --- MAIN LOOP ---
 
 def main():
-    print(f"BIST Data Fetcher Started at {datetime.now()} (Multi-Period Retry Mode)")
+    print(f"BIST Data Fetcher Started at {datetime.now()} (Aggressive 1-Day Fallback Mode)")
     
     # 1. Process All Indices
     all_indices = list(INDICES.keys())
@@ -235,9 +230,8 @@ def main():
                 'volume': stats['volume'],
                 'updated_at': datetime.now().isoformat()
             })
-        time.sleep(0.5) # Anti-ban delay
+        time.sleep(0.5)
 
-    # Write Indices
     if results_indices:
         try:
             supabase.table('bist_indices').upsert(results_indices).execute()
@@ -276,12 +270,11 @@ def main():
                 'change1w': stats['change_1w'],
                 'change1m': stats['change_1m'],
                 'change3m': stats['change_3m'],
-                'weight': stats['weight'],
+                'weight': None,
                 'updated_at': datetime.now().isoformat()
             })
         time.sleep(0.3)
 
-    # Write Stocks in chunks
     if results_stocks:
         try:
             for chunk in chunk_list(results_stocks, 100):
