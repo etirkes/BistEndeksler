@@ -127,44 +127,45 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
-def process_ticker_data(df, symbol):
-    """Pandas DataFrame'inden tekil hisse verisini hesaplar"""
+def fetch_single_ticker(symbol):
+    """Tekil hisse verisi çeker (Daha güvenli)"""
     try:
-        # MultiIndex kontrolü
-        if isinstance(df.columns, pd.MultiIndex):
-            if symbol not in df['Close'].columns:
-                return None
-            close_series = df['Close'][symbol].dropna()
-            volume_series = df['Volume'][symbol] if symbol in df['Volume'].columns else None
-        else:
-            # Tekil indirme durumu
-            close_series = df['Close'].dropna()
-            volume_series = df['Volume']
-
-        if len(close_series) < 5:
-            return None
-
-        current_price = close_series.iloc[-1]
-        last_date = close_series.index[-1]
+        # yf.download yerine yf.Ticker kullanıyoruz.
+        # Bu yöntem GitHub Actions'ta daha stabil çalışıyor.
+        ticker = yf.Ticker(symbol)
         
-        def get_price_at_delta(days):
-            target_date = last_date - timedelta(days=days)
+        # Sadece son 3.5 ay yeterli
+        hist = ticker.history(period="4mo")
+        
+        if len(hist) < 5:
+            # Boş geldiyse az bekle tekrar dene (basit retry)
+            time.sleep(1)
+            hist = ticker.history(period="4mo")
+            if len(hist) < 5:
+                print(f"- {symbol}: Veri yok veya eksik.")
+                return None
+
+        current_price = hist['Close'].iloc[-1]
+        
+        # Tarih filtreleme
+        def get_price_days_ago(days):
+            target_date = datetime.now() - timedelta(days=days)
             try:
-                idx = close_series.index.get_indexer([target_date], method='nearest')[0]
-                return close_series.iloc[idx]
+                idx = hist.index.get_indexer([target_date], method='nearest')[0]
+                return hist['Close'].iloc[idx]
             except:
-                return close_series.iloc[0]
+                return hist['Close'].iloc[0]
 
-        price_1d = close_series.iloc[-2]
-        price_1w = get_price_at_delta(7)
-        price_1m = get_price_at_delta(30)
-        price_3m = get_price_at_delta(90)
+        price_1d = hist['Close'].iloc[-2]
+        price_1w = get_price_days_ago(7)
+        price_1m = get_price_days_ago(30)
+        price_3m = get_price_days_ago(90)
 
-        # Hacim
-        vol_val = 0
-        if volume_series is not None and len(volume_series) > 0:
-             vol_val = volume_series.iloc[-1]
-             if pd.isna(vol_val): vol_val = 0
+        # Hacim kontrolü
+        vol = 0
+        if 'Volume' in hist.columns:
+            vol = hist['Volume'].iloc[-1]
+            if pd.isna(vol): vol = 0
 
         return {
             'last_price': round(float(current_price), 2),
@@ -172,20 +173,22 @@ def process_ticker_data(df, symbol):
             'change_1w': round(((float(current_price) - float(price_1w)) / float(price_1w)) * 100, 2),
             'change_1m': round(((float(current_price) - float(price_1m)) / float(price_1m)) * 100, 2),
             'change_3m': round(((float(current_price) - float(price_3m)) / float(price_3m)) * 100, 2),
-            'volume': f"{round(vol_val / 1_000_000, 1)}M"
+            'volume': f"{round(vol / 1_000_000, 1)}M"
         }
+
     except Exception as e:
+        # Hata olsa bile kodu durdurma, sadece logla
+        # print(f"Hata ({symbol}): {e}") 
         return None
 
 def chunk_list(lst, n):
-    """Listeyi n'li parçalara böler"""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
 def main():
-    print("Veri Çekme İşlemi Başlıyor (Clean/No-Session)...")
-
-    # 1. Sembol Listesi
+    print("Veri Çekme Başlıyor (Tekli Mod - Güvenli)...")
+    
+    # 1. Tüm sembolleri topla
     all_symbols = list(INDICES.keys())
     stock_to_indices = {}
     
@@ -200,98 +203,76 @@ def main():
     
     all_symbols = list(set(all_symbols))
     total_symbols = len(all_symbols)
-    print(f"Toplam {total_symbols} adet sembol işlenecek.")
+    print(f"Toplam {total_symbols} sembol işlenecek.")
 
-    # 2. BATCH DOWNLOAD (Standart yf.download ile)
-    # Batch boyutu 20 (Güvenli ve hızlı)
-    BATCH_SIZE = 20
+    results_indices = []
+    results_stocks = []
+
+    # 2. Her sembolü tek tek gez (yavaş ama güvenli)
+    for i, symbol in enumerate(all_symbols):
+        # İlerleme çubuğu gibi çıktı verelim
+        if i % 10 == 0:
+            print(f"İlerleme: {i}/{total_symbols}...")
+        
+        stats = fetch_single_ticker(symbol)
+        
+        # Veri geldiyse işle
+        if stats:
+            clean_code = symbol.replace('.IS', '')
+
+            # Endeks ise
+            if symbol in INDICES:
+                results_indices.append({
+                    'code': clean_code,
+                    'name': INDICES[symbol]['name'],
+                    'category': INDICES[symbol]['category'],
+                    'last_price': stats['last_price'],
+                    'change1d': stats['change_1d'],
+                    'change1w': stats['change_1w'],
+                    'change1m': stats['change_1m'],
+                    'change3m': stats['change_3m'],
+                    'volume': stats['volume'],
+                    'updated_at': datetime.now().isoformat()
+                })
+
+            # Hisse ise
+            if symbol in stock_to_indices:
+                results_stocks.append({
+                    'symbol': clean_code,
+                    'parent_index': ",".join(stock_to_indices[symbol]),
+                    'price': stats['last_price'],
+                    'change1d': stats['change_1d'],
+                    'change1w': stats['change_1w'],
+                    'change1m': stats['change_1m'],
+                    'change3m': stats['change_3m'],
+                    'updated_at': datetime.now().isoformat()
+                })
+        
+        # Rate limit yememek için her istek arası minik bekleme
+        time.sleep(0.3)
+
+    # 3. Veritabanına Yaz (Toplu)
+    print("Veritabanına yazılıyor...")
     
-    batch_indices = []
-    batch_stocks = []
-    processed_count = 0
-
-    for batch in chunk_list(all_symbols, BATCH_SIZE):
+    if results_indices:
         try:
-            print(f"İndiriliyor: {len(batch)} adet sembol... ({processed_count}/{total_symbols})")
-            
-            # --- KRİTİK DEĞİŞİKLİK BURADA ---
-            # Session YOK. threads=False (GitHub Actions için daha güvenli)
-            df = yf.download(batch, period="6mo", interval="1d", 
-                           group_by='ticker', auto_adjust=False, 
-                           threads=False, progress=False)
-            
-            if df.empty:
-                print("UYARI: Bu batch için veri alınamadı, atlanıyor.")
-                time.sleep(2)
-                continue
-
-            # Veriyi işle
-            for symbol in batch:
-                stats = process_ticker_data(df, symbol)
-                if not stats:
-                    continue
-
-                clean_code = symbol.replace('.IS', '')
-                
-                # Endeks Kaydı
-                if symbol in INDICES:
-                    record = {
-                        'code': clean_code,
-                        'name': INDICES[symbol]['name'],
-                        'category': INDICES[symbol]['category'],
-                        'last_price': stats['last_price'],
-                        'change1d': stats['change_1d'],
-                        'change1w': stats['change_1w'],
-                        'change1m': stats['change_1m'],
-                        'change3m': stats['change_3m'],
-                        'volume': stats['volume'],
-                        'updated_at': datetime.now().isoformat()
-                    }
-                    batch_indices.append(record)
-                
-                # Hisse Kaydı
-                if symbol in stock_to_indices:
-                    parent_indices_str = ",".join(stock_to_indices[symbol])
-                    stock_record = {
-                        'symbol': clean_code,
-                        'parent_index': parent_indices_str,
-                        'price': stats['last_price'],
-                        'change1d': stats['change_1d'],
-                        'change1w': stats['change_1w'],
-                        'change1m': stats['change_1m'],
-                        'change3m': stats['change_3m'],
-                        'updated_at': datetime.now().isoformat()
-                    }
-                    batch_stocks.append(stock_record)
-            
-            processed_count += len(batch)
-            
-            # Kısa bir bekleme
-            time.sleep(2)
-
-        except Exception as e:
-            print(f"Genel Batch Hatası: {e}")
-            continue
-
-    print("İndirme tamamlandı. Veritabanına yazılıyor...")
-
-    # 3. Supabase'e Yaz
-    if batch_indices:
-        try:
-            # 100'erli paketler halinde yaz
-            for chunk in chunk_list(batch_indices, 100):
+            # 100'erli paketler halinde upsert
+            for chunk in chunk_list(results_indices, 100):
                 supabase.table('bist_indices').upsert(chunk).execute()
-            print(f"BAŞARILI: {len(batch_indices)} endeks veritabanına yazıldı.")
+            print(f"✅ {len(results_indices)} endeks güncellendi.")
         except Exception as e:
-            print(f"Veritabanı Yazma Hatası (Endeks): {e}")
+            print(f"❌ DB Hata (Endeks): {e}")
 
-    if batch_stocks:
+    if results_stocks:
         try:
-            for chunk in chunk_list(batch_stocks, 100):
+            for chunk in chunk_list(results_stocks, 100):
                 supabase.table('bist_stocks').upsert(chunk).execute()
-            print(f"BAŞARILI: {len(batch_stocks)} hisse veritabanına yazıldı.")
+            print(f"✅ {len(results_stocks)} hisse güncellendi.")
         except Exception as e:
-            print(f"Veritabanı Yazma Hatası (Hisse): {e}")
+            print(f"❌ DB Hata (Hisse): {e}")
+
+    if not results_indices and not results_stocks:
+        print("❌ HİÇ VERİ TOPLANAMADI. Bir sorun var.")
 
 if __name__ == "__main__":
     main()
