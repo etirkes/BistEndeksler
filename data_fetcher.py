@@ -3,21 +3,30 @@ import pandas as pd
 from supabase import create_client, Client
 import os
 import time
+import requests
+import random
 from datetime import datetime, timedelta
 
 # --- AYARLAR ---
-# GitHub Actions Secrets veya yerel ortam değişkenlerinden alınır
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil.")
-    # Local test için
-    # SUPABASE_URL = "https://your-project.supabase.co"
-    # SUPABASE_KEY = "your-service-role-key" 
 
-# Bağlantıyı kur
+# Supabase Bağlantısı
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- İSTEK OTURUMU (SESSION) AYARLARI ---
+# Yahoo Finance'in GitHub Actions IP'lerini engellemesini aşmak için
+# gerçek bir tarayıcı gibi davranan Header bilgileri ekliyoruz.
+session = requests.Session()
+session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9,tr;q=0.8',
+    'Connection': 'keep-alive',
+})
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -156,13 +165,23 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
+
 def calculate_changes(ticker_symbol):
     try:
-        ticker = yf.Ticker(ticker_symbol)
+        # ÖNEMLİ: Oluşturduğumuz özel 'session'ı Ticker'a veriyoruz.
+        # Bu sayede Yahoo, isteği tarayıcıdan gelmiş gibi görüyor.
+        ticker = yf.Ticker(ticker_symbol, session=session)
         hist = ticker.history(period="4mo")
         
         if len(hist) < 5:
-            return None
+            # Yedek deneme: Bazen ilk istek boş dönerse kısa bir bekleme ile tekrar dene
+            time.sleep(1)
+            hist = ticker.history(period="4mo")
+            if len(hist) < 5:
+                # Logu kirletmemek için sadece gerçekten veri yoksa basılabilir, 
+                # ama şimdilik hatayı görelim.
+                print(f"Uyarı: {ticker_symbol} için veri alınamadı.")
+                return None
 
         current_price = hist['Close'].iloc[-1]
         
@@ -185,23 +204,21 @@ def calculate_changes(ticker_symbol):
             'change_1w': round(((current_price - price_1w) / price_1w) * 100, 2),
             'change_1m': round(((current_price - price_1m) / price_1m) * 100, 2),
             'change_3m': round(((current_price - price_3m) / price_3m) * 100, 2),
-            'volume': f"{round(hist['Volume'].iloc[-1] / 1_000_000, 1)}M"
+            # Hacim verisi bazen NaN gelebilir, kontrol edelim
+            'volume': f"{round(hist['Volume'].iloc[-1] / 1_000_000, 1)}M" if pd.notna(hist['Volume'].iloc[-1]) else "0M"
         }
         return changes
     except Exception as e:
-        print(f"Hata ({ticker_symbol}): {e}")
+        print(f"Kritik Hata ({ticker_symbol}): {e}")
         return None
 
 def main():
-    print("Veri çekme işlemi başladı...")
+    print("Veri çekme işlemi başladı (User-Agent Koruması Aktif)...")
     
     all_indices_data = []
     
     # --- 1. Hisseleri Grupla ---
-    # Hangi hisse hangi endekslere ait? Ters haritalama yapıyoruz.
-    # Örnek: 'THYAO.IS': ['XULAS', 'XU100']
     stock_to_indices = {}
-    
     for index_code, stock_list in CONSTITUENTS.items():
         clean_index_code = index_code.replace('.IS', '')
         for stock in stock_list:
@@ -230,7 +247,9 @@ def main():
                 'updated_at': datetime.now().isoformat()
             }
             all_indices_data.append(record)
-        time.sleep(0.5)
+        
+        # Her istek arasında rastgele kısa bekleme (Bot korumasını tetiklememek için)
+        time.sleep(random.uniform(0.5, 1.5))
 
     if all_indices_data:
         try:
@@ -238,6 +257,8 @@ def main():
             print(f"{len(all_indices_data)} endeks güncellendi.")
         except Exception as e:
             print(f"Veritabanı hatası (Endeks): {e}")
+    else:
+        print("UYARI: Hiçbir endeks verisi çekilemedi. Bağlantı veya sembol hatası olabilir.")
 
     # --- 3. Benzersiz Hisseleri Tara ve Kaydet ---
     all_stocks_data = []
@@ -245,16 +266,18 @@ def main():
     print(f"\nToplam {len(unique_stocks)} benzersiz hisse taranacak...")
 
     for i, stock_symbol in enumerate(unique_stocks):
-        print(f"Hisse İşleniyor ({i+1}/{len(unique_stocks)}): {stock_symbol}")
+        # İlerleme durumunu gösterelim
+        if i % 10 == 0:
+            print(f"Hisse ilerlemesi: {i}/{len(unique_stocks)}")
+            
         stock_data = calculate_changes(stock_symbol)
         
         if stock_data:
-            # Bu hissenin ait olduğu tüm endeksleri virgülle birleştir (Örn: "XU100,XULAS")
             parent_indices_str = ",".join(stock_to_indices[stock_symbol])
             
             stock_record = {
                 'symbol': stock_symbol.replace('.IS', ''),
-                'parent_index': parent_indices_str, # Artık tek bir endeks değil, liste stringi
+                'parent_index': parent_indices_str,
                 'price': stock_data['last_price'],
                 'change1d': stock_data['change_1d'],
                 'change1w': stock_data['change_1w'],
@@ -264,7 +287,8 @@ def main():
             }
             all_stocks_data.append(stock_record)
         
-        time.sleep(0.5)
+        # Hisseler arası bekleme
+        time.sleep(random.uniform(0.3, 1.0))
 
     if all_stocks_data:
         try:
@@ -272,6 +296,8 @@ def main():
             print(f"{len(all_stocks_data)} hisse güncellendi.")
         except Exception as e:
             print(f"Veritabanı hatası (Hisse): {e}")
+    else:
+        print("UYARI: Hiçbir hisse verisi çekilemedi.")
 
 if __name__ == "__main__":
     main()
