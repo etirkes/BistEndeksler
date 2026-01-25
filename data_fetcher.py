@@ -3,6 +3,8 @@ import pandas as pd
 from supabase import create_client, Client
 import os
 import time
+import requests
+import random
 from datetime import datetime, timedelta
 
 # --- AYARLAR ---
@@ -10,13 +12,20 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil. GitHub Secrets kontrol edilmeli.")
+    print("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil.")
 
 # Supabase Bağlantısı
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
-    raise ValueError(f"Supabase bağlantı hatası: {e}")
+    print(f"Supabase bağlantı hatası: {e}")
+
+# --- İSTEK AYARLARI ---
+# User-Agent tanımlaması (Tarayıcı gibi görünmek için)
+session = requests.Session()
+session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+})
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -159,35 +168,22 @@ CONSTITUENTS = {
 def process_ticker_data(df, symbol):
     """Pandas DataFrame'inden tekil hisse verisini hesaplar"""
     try:
-        # DataFrame MultiIndex ise (Price, Ticker) formatındadır
-        # Sadece bu sembole ait seriyi alalım
-        if isinstance(df.columns, pd.MultiIndex):
-            # Eğer sembol indirilmediyse (hatalıysa) sütunlarda olmayabilir
-            if symbol not in df['Close'].columns:
-                return None
-            close_series = df['Close'][symbol]
-            volume_series = df['Volume'][symbol]
-        else:
-             # Tek hisse indirildiyse düz index
-            close_series = df['Close']
-            volume_series = df['Volume']
+        # Sembol dataframe'de yoksa atla
+        if symbol not in df['Close'].columns:
+            return None
+            
+        close_series = df['Close'][symbol].dropna()
+        volume_series = df['Volume'][symbol] if symbol in df['Volume'].columns else None
 
-        # Boş veri kontrolü
-        close_series = close_series.dropna()
         if len(close_series) < 5:
             return None
 
         current_price = close_series.iloc[-1]
         last_date = close_series.index[-1]
         
-        # Tarih filtreleme (Hafta sonu boşluklarını tolere etmek için 'asof' veya 'nearest' mantığı)
-        # Pandas series index üzerinden işlem yapıyoruz
-        
         def get_price_at_delta(days):
             target_date = last_date - timedelta(days=days)
-            # target_date'e en yakın ama ondan önceki iş günü
             try:
-                # get_indexer ile en yakın tarihi bul
                 idx = close_series.index.get_indexer([target_date], method='nearest')[0]
                 return close_series.iloc[idx]
             except:
@@ -199,8 +195,10 @@ def process_ticker_data(df, symbol):
         price_3m = get_price_at_delta(90)
 
         # Hacim
-        vol_val = volume_series.iloc[-1] if len(volume_series) > 0 else 0
-        if pd.isna(vol_val): vol_val = 0
+        vol_val = 0
+        if volume_series is not None and len(volume_series) > 0:
+             vol_val = volume_series.iloc[-1]
+             if pd.isna(vol_val): vol_val = 0
 
         return {
             'last_price': round(float(current_price), 2),
@@ -211,13 +209,17 @@ def process_ticker_data(df, symbol):
             'volume': f"{round(vol_val / 1_000_000, 1)}M"
         }
     except Exception as e:
-        # print(f"Hesaplama hatası ({symbol}): {e}")
         return None
 
-def main():
-    print("Toplu Veri Çekme İşlemi Başlıyor...")
+def chunk_list(lst, n):
+    """Listeyi n'li parçalara böler"""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
 
-    # 1. İndirilecek Tüm Sembolleri Topla
+def main():
+    print("Batch Veri Çekme İşlemi Başlıyor...")
+
+    # 1. Sembol Listesi Hazırla
     all_symbols = list(INDICES.keys())
     stock_to_indices = {}
     
@@ -230,74 +232,93 @@ def main():
             if clean_index_code not in stock_to_indices[stock]:
                 stock_to_indices[stock].append(clean_index_code)
     
-    # Tekrarları temizle
     all_symbols = list(set(all_symbols))
-    print(f"Toplam {len(all_symbols)} adet sembol indirilecek.")
+    total_symbols = len(all_symbols)
+    print(f"Toplam {total_symbols} adet sembol işlenecek.")
 
-    # 2. BULK DOWNLOAD (Tek seferde indir)
-    # period="6mo" (3 aylık değişim hesaplamak için yeterli veri)
-    try:
-        df = yf.download(all_symbols, period="6mo", interval="1d", group_by='ticker', auto_adjust=False, threads=True)
-    except Exception as e:
-        print(f"Yahoo Finance indirme hatası: {e}")
-        return
-
-    print("Veriler indirildi, işleniyor ve veritabanına yazılıyor...")
-
-    # 3. Verileri İşle ve Listelere Ayır
+    # 2. BATCH DOWNLOAD (Parça Parça İndir)
+    BATCH_SIZE = 30 # Her seferde 30 hisse indir (Güvenli limit)
+    
     batch_indices = []
     batch_stocks = []
-    
-    for symbol in all_symbols:
-        stats = process_ticker_data(df, symbol)
-        if not stats:
+    processed_count = 0
+
+    # Listeyi parçalara böl ve döngüye sok
+    for batch in chunk_list(all_symbols, BATCH_SIZE):
+        try:
+            print(f"İndiriliyor: {len(batch)} adet sembol... ({processed_count}/{total_symbols})")
+            
+            # Yahoo'dan indir
+            df = yf.download(batch, period="6mo", interval="1d", group_by='ticker', auto_adjust=False, threads=True, progress=False)
+            
+            if df.empty:
+                print("UYARI: Bu batch boş döndü, Yahoo engellemiş olabilir.")
+                time.sleep(5)
+                continue
+
+            # İndirilen veriyi işle
+            for symbol in batch:
+                stats = process_ticker_data(df, symbol)
+                if not stats:
+                    continue
+
+                clean_code = symbol.replace('.IS', '')
+                
+                # Endeks Kaydı
+                if symbol in INDICES:
+                    record = {
+                        'code': clean_code,
+                        'name': INDICES[symbol]['name'],
+                        'category': INDICES[symbol]['category'],
+                        'last_price': stats['last_price'],
+                        'change1d': stats['change_1d'],
+                        'change1w': stats['change_1w'],
+                        'change1m': stats['change_1m'],
+                        'change3m': stats['change_3m'],
+                        'volume': stats['volume'],
+                        'updated_at': datetime.now().isoformat()
+                    }
+                    batch_indices.append(record)
+                
+                # Hisse Kaydı
+                if symbol in stock_to_indices:
+                    parent_indices_str = ",".join(stock_to_indices[symbol])
+                    stock_record = {
+                        'symbol': clean_code,
+                        'parent_index': parent_indices_str,
+                        'price': stats['last_price'],
+                        'change1d': stats['change_1d'],
+                        'change1w': stats['change_1w'],
+                        'change1m': stats['change_1m'],
+                        'change3m': stats['change_3m'],
+                        'updated_at': datetime.now().isoformat()
+                    }
+                    batch_stocks.append(stock_record)
+            
+            processed_count += len(batch)
+            # Her batch sonrası kısa bir bekleme (IP ban yememek için)
+            time.sleep(2)
+
+        except Exception as e:
+            print(f"Batch Hatası: {e}")
             continue
 
-        clean_code = symbol.replace('.IS', '')
-        
-        # Endeks mi?
-        if symbol in INDICES:
-            record = {
-                'code': clean_code,
-                'name': INDICES[symbol]['name'],
-                'category': INDICES[symbol]['category'],
-                'last_price': stats['last_price'],
-                'change1d': stats['change_1d'],
-                'change1w': stats['change_1w'],
-                'change1m': stats['change_1m'],
-                'change3m': stats['change_3m'],
-                'volume': stats['volume'],
-                'updated_at': datetime.now().isoformat()
-            }
-            batch_indices.append(record)
-        
-        # Hisse mi? (stock_to_indices içinde var mı?)
-        if symbol in stock_to_indices:
-            parent_indices_str = ",".join(stock_to_indices[symbol])
-            stock_record = {
-                'symbol': clean_code,
-                'parent_index': parent_indices_str,
-                'price': stats['last_price'],
-                'change1d': stats['change_1d'],
-                'change1w': stats['change_1w'],
-                'change1m': stats['change_1m'],
-                'change3m': stats['change_3m'],
-                'updated_at': datetime.now().isoformat()
-            }
-            batch_stocks.append(stock_record)
+    print("İndirme tamamlandı. Veritabanına yazılıyor...")
 
-    # 4. Supabase'e Yaz (Toplu)
+    # 3. Supabase'e Yaz (Toplu)
     if batch_indices:
         try:
-            data = supabase.table('bist_indices').upsert(batch_indices).execute()
+            # 100'erli paketler halinde yaz (Supabase limiti için)
+            for chunk in chunk_list(batch_indices, 100):
+                supabase.table('bist_indices').upsert(chunk).execute()
             print(f"BAŞARILI: {len(batch_indices)} endeks veritabanına yazıldı.")
         except Exception as e:
             print(f"Veritabanı Yazma Hatası (Endeks): {e}")
-            print("İPUCU: GitHub Secrets içindeki SUPABASE_KEY değerinin 'service_role' anahtarı olduğundan emin olun.")
 
     if batch_stocks:
         try:
-            data = supabase.table('bist_stocks').upsert(batch_stocks).execute()
+            for chunk in chunk_list(batch_stocks, 100):
+                supabase.table('bist_stocks').upsert(chunk).execute()
             print(f"BAŞARILI: {len(batch_stocks)} hisse veritabanına yazıldı.")
         except Exception as e:
             print(f"Veritabanı Yazma Hatası (Hisse): {e}")
