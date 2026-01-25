@@ -5,18 +5,9 @@ import os
 import time
 from datetime import datetime, timedelta
 
-# TradingView kütüphanesi
-try:
-    from tvDatafeed import TvDatafeed, Interval
-    HAS_TV = True
-except ImportError:
-    HAS_TV = False
-
 # --- AYARLAR ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-TV_USERNAME = os.environ.get("TV_USERNAME")
-TV_PASSWORD = os.environ.get("TV_PASSWORD")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil.")
@@ -25,19 +16,6 @@ try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
     print(f"Supabase bağlantı hatası: {e}")
-
-# TradingView Başlatma
-tv = None
-if HAS_TV:
-    try:
-        if TV_USERNAME and TV_PASSWORD:
-            tv = TvDatafeed(username=TV_USERNAME, password=TV_PASSWORD)
-            print("TradingView bağlantısı sağlandı.")
-        else:
-            tv = TvDatafeed()
-            print("TradingView (Anonim) bağlantısı sağlandı.")
-    except Exception as e:
-        print(f"TradingView başlatılamadı: {e}")
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -148,19 +126,23 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
+
 # --- YARDIMCI HESAPLAMA ---
 
 def calculate_stats(df_in):
     """DataFrame verisinden fiyat ve periyot değişimlerini hesaplar"""
     try:
-        closes = df_in['close' if 'close' in df_in.columns else 'Close'].dropna()
+        # yfinance bazen 'Close' bazen 'close' döndürebilir, her ikisini de kontrol et
+        col = 'Close' if 'Close' in df_in.columns else 'close'
+        closes = df_in[col].dropna()
+        
         if len(closes) < 2: return None
         
-        # Timezone temizliği (özellikle Yahoo için)
+        # Timezone temizliği
         if hasattr(closes.index, 'tz_localize'):
             closes.index = closes.index.tz_localize(None)
 
-        curr_price = closes.iloc[-1]
+        curr_price = float(closes.iloc[-1])
         last_date = closes.index[-1]
         
         def get_p(days):
@@ -170,7 +152,7 @@ def calculate_stats(df_in):
             if pd.isna(idx): return None
             return float(closes.loc[idx])
 
-        p1d = closes.iloc[-2]
+        p1d = float(closes.iloc[-2])
         p1w = get_p(7)
         p1m = get_p(30)
         p3m = get_p(90)
@@ -179,45 +161,46 @@ def calculate_stats(df_in):
             if old is None or old == 0: return 0
             return round(((new - old) / old) * 100, 2)
 
-        vol = df_in['volume' if 'volume' in df_in.columns else 'Volume'].iloc[-1]
+        vol_col = 'Volume' if 'Volume' in df_in.columns else 'volume'
+        vol = float(df_in[vol_col].iloc[-1]) if vol_col in df_in.columns else 0
         
         return {
-            'last_price': round(float(curr_price), 2),
+            'last_price': round(curr_price, 2),
             'change_1d': pct(curr_price, p1d),
             'change_1w': pct(curr_price, p1w),
             'change_1m': pct(curr_price, p1m),
             'change_3m': pct(curr_price, p3m),
             'volume': f"{round(vol / 1_000_000, 1)}M"
         }
-    except Exception:
+    except Exception as e:
+        print(f"Hesaplama hatası: {e}")
         return None
 
 # --- VERİ ÇEKME ---
 
-def fetch_hybrid(symbol_raw):
-    """TV'den dener, olmazsa Yahoo'dan dener"""
-    # 1. TradingView
-    if HAS_TV and tv:
-        try:
-            sym = symbol_raw.replace('.IS', '')
-            df = tv.get_hist(symbol=sym, exchange="BIST", interval=Interval.in_daily, n_bars=120)
-            if df is not None and not df.empty:
-                res = calculate_stats(df)
-                if res: return res
-        except: pass
-
-    # 2. Yahoo Finance
+def fetch_data(symbol_raw):
+    """Sadece Yahoo Finance üzerinden veri çeker"""
     try:
         ticker = yf.Ticker(symbol_raw)
-        df = ticker.history(period="6mo")
-        if df is not None and not df.empty:
-            return calculate_stats(df)
-    except: pass
-    
-    return None
+        
+        # Yahoo BIST endeksleri bazen kısıtlı veri döndürür. 
+        # Önce 1 yıllık deneyelim, boş dönerse maksimumu deneyelim.
+        df = ticker.history(period="1y")
+        
+        if df.empty or len(df) < 5:
+            # Endeksler için son şans: 'max' periyodu
+            df = ticker.history(period="max")
+            
+        if df.empty:
+            return None
+            
+        return calculate_stats(df)
+    except Exception as e:
+        print(f"Yahoo Hatası ({symbol_raw}): {e}")
+        return None
 
 def main():
-    print("BIST Hibrit Veri Akışı Başladı...")
+    print("BIST Veri Akışı Başladı (Sadece Yahoo Finance)...")
     
     all_symbols = list(INDICES.keys())
     stock_to_indices = {}
@@ -230,16 +213,20 @@ def main():
             if clean_idx not in stock_to_indices[s]: stock_to_indices[s].append(clean_idx)
     
     total = len(all_symbols)
+    print(f"Toplam {total} sembol taranacak.")
+
     results_indices = []
     results_stocks = []
 
     for i, symbol in enumerate(all_symbols):
         if i % 20 == 0: print(f"İlerleme: {i}/{total}...")
         
-        stats = fetch_hybrid(symbol)
+        stats = fetch_data(symbol)
+        
         if stats:
             clean_code = symbol.replace('.IS', '')
             
+            # Endeks mi?
             if symbol in INDICES:
                 results_indices.append({
                     'code': clean_code,
@@ -254,6 +241,7 @@ def main():
                     'updated_at': datetime.now().isoformat()
                 })
 
+            # Hisse mi?
             if symbol in stock_to_indices:
                 results_stocks.append({
                     'symbol': clean_code,
@@ -265,18 +253,30 @@ def main():
                     'change3m': stats['change_3m'],
                     'updated_at': datetime.now().isoformat()
                 })
-        time.sleep(0.1)
+        
+        # Yahoo'dan ban yememek için kısa bekleme
+        time.sleep(0.15)
 
-    # Yazma
+    # Yazma fonksiyonu
     def chunk(lst, n):
         for i in range(0, len(lst), n): yield lst[i:i + n]
 
+    print("Veritabanına yazılıyor...")
     if results_indices:
-        for c in chunk(results_indices, 100): supabase.table('bist_indices').upsert(c).execute()
-        print(f"✅ {len(results_indices)} endeks güncellendi.")
+        try:
+            for c in chunk(results_indices, 100):
+                supabase.table('bist_indices').upsert(c).execute()
+            print(f"✅ {len(results_indices)} endeks güncellendi.")
+        except Exception as e:
+            print(f"❌ DB Hata (Endeks): {e}")
+
     if results_stocks:
-        for c in chunk(results_stocks, 100): supabase.table('bist_stocks').upsert(c).execute()
-        print(f"✅ {len(results_stocks)} hisse güncellendi.")
+        try:
+            for c in chunk(results_stocks, 100):
+                supabase.table('bist_stocks').upsert(c).execute()
+            print(f"✅ {len(results_stocks)} hisse güncellendi.")
+        except Exception as e:
+            print(f"❌ DB Hata (Hisse): {e}")
 
 if __name__ == "__main__":
     main()
