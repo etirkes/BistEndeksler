@@ -9,10 +9,13 @@ from datetime import datetime, timedelta
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
+# Local test için (Gerekirse burayı doldurun, GitHub'da secrets kullanır)
+# SUPABASE_URL = "https://your-project.supabase.co"
+# SUPABASE_KEY = "your-service-role-key"
+
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil.")
 
-# Supabase Bağlantısı
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
@@ -128,60 +131,55 @@ CONSTITUENTS = {
 }
 
 def fetch_single_ticker(symbol):
-    """Tekil hisse verisi çeker (Daha hassas hesaplama ile)"""
     try:
         ticker = yf.Ticker(symbol)
         
-        # Daha uzun bir periyot çekelim ki tatilleri atlayabilelim
-        hist = ticker.history(period="6mo")
+        # 1. HATA DÜZELTME: Daha uzun veri çek (1 Yıl)
+        # Böylece 3 ay önceki veri kesinlikle bulunur.
+        hist = ticker.history(period="1y")
         
-        # Boş veri kontrolü
         if hist.empty:
-            print(f"- {symbol}: Veri yok (Empty)")
+            print(f"- {symbol}: Veri yok")
             return None
         
-        # Sadece Kapanış fiyatlarını al ve NaN değerleri temizle
         closes = hist['Close'].dropna()
-        
-        # En az 2 günlük veri lazım (Bugün ve Dün)
         if len(closes) < 2:
-            print(f"- {symbol}: Yetersiz veri ({len(closes)} gün)")
             return None
+
+        # 2. HATA DÜZELTME: Timezone Temizliği
+        # İndex'teki saat dilimini kaldırıyoruz (Naive yapıyoruz)
+        # Bu, tarih karşılaştırmalarındaki hatayı çözer.
+        closes.index = closes.index.tz_localize(None)
 
         current_price = closes.iloc[-1]
         last_date = closes.index[-1]
         
-        # Yardımcı fonksiyon: Belirli bir gün öncesine git, yoksa en yakın önceki günü bul
         def get_price_at_delta(days_back):
             try:
-                # Hedef tarih: Bugün - X gün
                 target_date = last_date - timedelta(days=days_back)
                 
-                # asof: Hedef tarihten önceki en son geçerli iş günü verisini bulur
-                # Bu, hafta sonları ve tatillerdeki "sabit kalma" sorununu çözer
+                # 'asof' metodu, o tarihteki veya ondan önceki en son geçerli fiyatı bulur.
+                # Tatillerde fiyatın sabit görünmesini sağlar.
                 idx = closes.index.asof(target_date)
                 
-                if pd.isna(idx): # Eğer tarih çok eskiyse ve veri yoksa
-                    return closes.iloc[0] # En eski veriyi dön
+                if pd.isna(idx):
+                    return closes.iloc[0]
                 
                 return closes.loc[idx]
-            except Exception as e:
+            except Exception:
                 return closes.iloc[0]
 
-        # 1 Gün Önce (Bir önceki kapanış)
         price_1d = closes.iloc[-2]
-        
-        # Diğer periyotlar (Takvim günü bazlı değil, işlem günü bazlı arama)
         price_1w = get_price_at_delta(7)
         price_1m = get_price_at_delta(30)
         price_3m = get_price_at_delta(90)
 
-        # Hacim kontrolü
+        # Hacim
         vol = 0
         if 'Volume' in hist.columns:
-            vol_series = hist['Volume'].dropna()
-            if not vol_series.empty:
-                vol = vol_series.iloc[-1]
+            v_series = hist['Volume'].dropna()
+            if not v_series.empty:
+                vol = v_series.iloc[-1]
 
         return {
             'last_price': round(float(current_price), 2),
@@ -193,7 +191,6 @@ def fetch_single_ticker(symbol):
         }
 
     except Exception as e:
-        # print(f"Hata ({symbol}): {e}") 
         return None
 
 def chunk_list(lst, n):
@@ -201,7 +198,7 @@ def chunk_list(lst, n):
         yield lst[i:i + n]
 
 def main():
-    print("Veri Çekme Başlıyor (Gelişmiş Hesaplama Modu)...")
+    print("Veri Çekme Başlıyor (Fixli Versiyon)...")
     
     # 1. Tüm sembolleri topla
     all_symbols = list(INDICES.keys())
@@ -218,12 +215,12 @@ def main():
     
     all_symbols = list(set(all_symbols))
     total_symbols = len(all_symbols)
-    print(f"Toplam {total_symbols} sembol işlenecek.")
+    print(f"Toplam {total_symbols} sembol taranacak.")
 
     results_indices = []
     results_stocks = []
 
-    # 2. Her sembolü tek tek gez
+    # 2. Döngü
     for i, symbol in enumerate(all_symbols):
         if i % 10 == 0:
             print(f"İlerleme: {i}/{total_symbols}...")
@@ -233,7 +230,7 @@ def main():
         if stats:
             clean_code = symbol.replace('.IS', '')
 
-            # Endeks ise
+            # Endeks
             if symbol in INDICES:
                 results_indices.append({
                     'code': clean_code,
@@ -248,7 +245,7 @@ def main():
                     'updated_at': datetime.now().isoformat()
                 })
 
-            # Hisse ise
+            # Hisse
             if symbol in stock_to_indices:
                 results_stocks.append({
                     'symbol': clean_code,
@@ -261,16 +258,17 @@ def main():
                     'updated_at': datetime.now().isoformat()
                 })
         
-        time.sleep(0.3)
+        # Kısa bekleme
+        time.sleep(0.2)
 
-    # 3. Veritabanına Yaz
+    # 3. Yazma
     print("Veritabanına yazılıyor...")
     
     if results_indices:
         try:
             for chunk in chunk_list(results_indices, 100):
                 supabase.table('bist_indices').upsert(chunk).execute()
-            print(f"✅ {len(results_indices)} endeks güncellendi.")
+            print(f"✅ {len(results_indices)} endeks başarıyla güncellendi.")
         except Exception as e:
             print(f"❌ DB Hata (Endeks): {e}")
 
@@ -278,12 +276,9 @@ def main():
         try:
             for chunk in chunk_list(results_stocks, 100):
                 supabase.table('bist_stocks').upsert(chunk).execute()
-            print(f"✅ {len(results_stocks)} hisse güncellendi.")
+            print(f"✅ {len(results_stocks)} hisse başarıyla güncellendi.")
         except Exception as e:
             print(f"❌ DB Hata (Hisse): {e}")
-
-    if not results_indices and not results_stocks:
-        print("❌ HİÇ VERİ TOPLANAMADI. Bir sorun var.")
 
 if __name__ == "__main__":
     main()
