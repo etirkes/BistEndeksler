@@ -3,8 +3,6 @@ import pandas as pd
 from supabase import create_client, Client
 import os
 import time
-import requests
-import random
 from datetime import datetime, timedelta
 
 # --- AYARLAR ---
@@ -12,21 +10,13 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil.")
+    raise ValueError("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil. GitHub Secrets kontrol edilmeli.")
 
 # Supabase Bağlantısı
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# --- İSTEK OTURUMU (SESSION) AYARLARI ---
-# Yahoo Finance'in GitHub Actions IP'lerini engellemesini aşmak için
-# gerçek bir tarayıcı gibi davranan Header bilgileri ekliyoruz.
-session = requests.Session()
-session.headers.update({
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.9,tr;q=0.8',
-    'Connection': 'keep-alive',
-})
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    raise ValueError(f"Supabase bağlantı hatası: {e}")
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -166,138 +156,151 @@ CONSTITUENTS = {
 }
 
 
-def calculate_changes(ticker_symbol):
+def process_ticker_data(df, symbol):
+    """Pandas DataFrame'inden tekil hisse verisini hesaplar"""
     try:
-        # ÖNEMLİ: Oluşturduğumuz özel 'session'ı Ticker'a veriyoruz.
-        # Bu sayede Yahoo, isteği tarayıcıdan gelmiş gibi görüyor.
-        ticker = yf.Ticker(ticker_symbol, session=session)
-        hist = ticker.history(period="4mo")
-        
-        if len(hist) < 5:
-            # Yedek deneme: Bazen ilk istek boş dönerse kısa bir bekleme ile tekrar dene
-            time.sleep(1)
-            hist = ticker.history(period="4mo")
-            if len(hist) < 5:
-                # Logu kirletmemek için sadece gerçekten veri yoksa basılabilir, 
-                # ama şimdilik hatayı görelim.
-                print(f"Uyarı: {ticker_symbol} için veri alınamadı.")
+        # DataFrame MultiIndex ise (Price, Ticker) formatındadır
+        # Sadece bu sembole ait seriyi alalım
+        if isinstance(df.columns, pd.MultiIndex):
+            # Eğer sembol indirilmediyse (hatalıysa) sütunlarda olmayabilir
+            if symbol not in df['Close'].columns:
                 return None
+            close_series = df['Close'][symbol]
+            volume_series = df['Volume'][symbol]
+        else:
+             # Tek hisse indirildiyse düz index
+            close_series = df['Close']
+            volume_series = df['Volume']
 
-        current_price = hist['Close'].iloc[-1]
+        # Boş veri kontrolü
+        close_series = close_series.dropna()
+        if len(close_series) < 5:
+            return None
+
+        current_price = close_series.iloc[-1]
+        last_date = close_series.index[-1]
         
-        def get_price_days_ago(days):
-            target_date = datetime.now() - timedelta(days=days)
+        # Tarih filtreleme (Hafta sonu boşluklarını tolere etmek için 'asof' veya 'nearest' mantığı)
+        # Pandas series index üzerinden işlem yapıyoruz
+        
+        def get_price_at_delta(days):
+            target_date = last_date - timedelta(days=days)
+            # target_date'e en yakın ama ondan önceki iş günü
             try:
-                idx = hist.index.get_indexer([target_date], method='nearest')[0]
-                return hist['Close'].iloc[idx]
+                # get_indexer ile en yakın tarihi bul
+                idx = close_series.index.get_indexer([target_date], method='nearest')[0]
+                return close_series.iloc[idx]
             except:
-                return hist['Close'].iloc[0]
+                return close_series.iloc[0]
 
-        price_1d = hist['Close'].iloc[-2]
-        price_1w = get_price_days_ago(7)
-        price_1m = get_price_days_ago(30)
-        price_3m = get_price_days_ago(90)
+        price_1d = close_series.iloc[-2]
+        price_1w = get_price_at_delta(7)
+        price_1m = get_price_at_delta(30)
+        price_3m = get_price_at_delta(90)
 
-        changes = {
-            'last_price': round(current_price, 2),
-            'change_1d': round(((current_price - price_1d) / price_1d) * 100, 2),
-            'change_1w': round(((current_price - price_1w) / price_1w) * 100, 2),
-            'change_1m': round(((current_price - price_1m) / price_1m) * 100, 2),
-            'change_3m': round(((current_price - price_3m) / price_3m) * 100, 2),
-            # Hacim verisi bazen NaN gelebilir, kontrol edelim
-            'volume': f"{round(hist['Volume'].iloc[-1] / 1_000_000, 1)}M" if pd.notna(hist['Volume'].iloc[-1]) else "0M"
+        # Hacim
+        vol_val = volume_series.iloc[-1] if len(volume_series) > 0 else 0
+        if pd.isna(vol_val): vol_val = 0
+
+        return {
+            'last_price': round(float(current_price), 2),
+            'change_1d': round(((float(current_price) - float(price_1d)) / float(price_1d)) * 100, 2),
+            'change_1w': round(((float(current_price) - float(price_1w)) / float(price_1w)) * 100, 2),
+            'change_1m': round(((float(current_price) - float(price_1m)) / float(price_1m)) * 100, 2),
+            'change_3m': round(((float(current_price) - float(price_3m)) / float(price_3m)) * 100, 2),
+            'volume': f"{round(vol_val / 1_000_000, 1)}M"
         }
-        return changes
     except Exception as e:
-        print(f"Kritik Hata ({ticker_symbol}): {e}")
+        # print(f"Hesaplama hatası ({symbol}): {e}")
         return None
 
 def main():
-    print("Veri çekme işlemi başladı (User-Agent Koruması Aktif)...")
-    
-    all_indices_data = []
-    
-    # --- 1. Hisseleri Grupla ---
+    print("Toplu Veri Çekme İşlemi Başlıyor...")
+
+    # 1. İndirilecek Tüm Sembolleri Topla
+    all_symbols = list(INDICES.keys())
     stock_to_indices = {}
+    
     for index_code, stock_list in CONSTITUENTS.items():
         clean_index_code = index_code.replace('.IS', '')
         for stock in stock_list:
+            all_symbols.append(stock)
             if stock not in stock_to_indices:
                 stock_to_indices[stock] = []
             if clean_index_code not in stock_to_indices[stock]:
                 stock_to_indices[stock].append(clean_index_code)
+    
+    # Tekrarları temizle
+    all_symbols = list(set(all_symbols))
+    print(f"Toplam {len(all_symbols)} adet sembol indirilecek.")
 
-    # --- 2. Endeksleri Tara ve Kaydet ---
-    for symbol, info in INDICES.items():
-        print(f"Endeks İşleniyor: {symbol}")
-        data = calculate_changes(symbol)
+    # 2. BULK DOWNLOAD (Tek seferde indir)
+    # period="6mo" (3 aylık değişim hesaplamak için yeterli veri)
+    try:
+        df = yf.download(all_symbols, period="6mo", interval="1d", group_by='ticker', auto_adjust=False, threads=True)
+    except Exception as e:
+        print(f"Yahoo Finance indirme hatası: {e}")
+        return
+
+    print("Veriler indirildi, işleniyor ve veritabanına yazılıyor...")
+
+    # 3. Verileri İşle ve Listelere Ayır
+    batch_indices = []
+    batch_stocks = []
+    
+    for symbol in all_symbols:
+        stats = process_ticker_data(df, symbol)
+        if not stats:
+            continue
+
+        clean_code = symbol.replace('.IS', '')
         
-        if data:
-            clean_code = symbol.replace('.IS', '')
+        # Endeks mi?
+        if symbol in INDICES:
             record = {
                 'code': clean_code,
-                'name': info['name'],
-                'category': info['category'],
-                'last_price': data['last_price'],
-                'change1d': data['change_1d'],
-                'change1w': data['change_1w'],
-                'change1m': data['change_1m'],
-                'change3m': data['change_3m'],
-                'volume': data['volume'],
+                'name': INDICES[symbol]['name'],
+                'category': INDICES[symbol]['category'],
+                'last_price': stats['last_price'],
+                'change1d': stats['change_1d'],
+                'change1w': stats['change_1w'],
+                'change1m': stats['change_1m'],
+                'change3m': stats['change_3m'],
+                'volume': stats['volume'],
                 'updated_at': datetime.now().isoformat()
             }
-            all_indices_data.append(record)
+            batch_indices.append(record)
         
-        # Her istek arasında rastgele kısa bekleme (Bot korumasını tetiklememek için)
-        time.sleep(random.uniform(0.5, 1.5))
-
-    if all_indices_data:
-        try:
-            supabase.table('bist_indices').upsert(all_indices_data).execute()
-            print(f"{len(all_indices_data)} endeks güncellendi.")
-        except Exception as e:
-            print(f"Veritabanı hatası (Endeks): {e}")
-    else:
-        print("UYARI: Hiçbir endeks verisi çekilemedi. Bağlantı veya sembol hatası olabilir.")
-
-    # --- 3. Benzersiz Hisseleri Tara ve Kaydet ---
-    all_stocks_data = []
-    unique_stocks = list(stock_to_indices.keys())
-    print(f"\nToplam {len(unique_stocks)} benzersiz hisse taranacak...")
-
-    for i, stock_symbol in enumerate(unique_stocks):
-        # İlerleme durumunu gösterelim
-        if i % 10 == 0:
-            print(f"Hisse ilerlemesi: {i}/{len(unique_stocks)}")
-            
-        stock_data = calculate_changes(stock_symbol)
-        
-        if stock_data:
-            parent_indices_str = ",".join(stock_to_indices[stock_symbol])
-            
+        # Hisse mi? (stock_to_indices içinde var mı?)
+        if symbol in stock_to_indices:
+            parent_indices_str = ",".join(stock_to_indices[symbol])
             stock_record = {
-                'symbol': stock_symbol.replace('.IS', ''),
+                'symbol': clean_code,
                 'parent_index': parent_indices_str,
-                'price': stock_data['last_price'],
-                'change1d': stock_data['change_1d'],
-                'change1w': stock_data['change_1w'],
-                'change1m': stock_data['change_1m'],
-                'change3m': stock_data['change_3m'],
+                'price': stats['last_price'],
+                'change1d': stats['change_1d'],
+                'change1w': stats['change_1w'],
+                'change1m': stats['change_1m'],
+                'change3m': stats['change_3m'],
                 'updated_at': datetime.now().isoformat()
             }
-            all_stocks_data.append(stock_record)
-        
-        # Hisseler arası bekleme
-        time.sleep(random.uniform(0.3, 1.0))
+            batch_stocks.append(stock_record)
 
-    if all_stocks_data:
+    # 4. Supabase'e Yaz (Toplu)
+    if batch_indices:
         try:
-            supabase.table('bist_stocks').upsert(all_stocks_data).execute()
-            print(f"{len(all_stocks_data)} hisse güncellendi.")
+            data = supabase.table('bist_indices').upsert(batch_indices).execute()
+            print(f"BAŞARILI: {len(batch_indices)} endeks veritabanına yazıldı.")
         except Exception as e:
-            print(f"Veritabanı hatası (Hisse): {e}")
-    else:
-        print("UYARI: Hiçbir hisse verisi çekilemedi.")
+            print(f"Veritabanı Yazma Hatası (Endeks): {e}")
+            print("İPUCU: GitHub Secrets içindeki SUPABASE_KEY değerinin 'service_role' anahtarı olduğundan emin olun.")
+
+    if batch_stocks:
+        try:
+            data = supabase.table('bist_stocks').upsert(batch_stocks).execute()
+            print(f"BAŞARILI: {len(batch_stocks)} hisse veritabanına yazıldı.")
+        except Exception as e:
+            print(f"Veritabanı Yazma Hatası (Hisse): {e}")
 
 if __name__ == "__main__":
     main()
