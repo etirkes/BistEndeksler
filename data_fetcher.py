@@ -128,44 +128,60 @@ CONSTITUENTS = {
 }
 
 def fetch_single_ticker(symbol):
-    """Tekil hisse verisi çeker (Daha güvenli)"""
+    """Tekil hisse verisi çeker (Daha hassas hesaplama ile)"""
     try:
-        # yf.download yerine yf.Ticker kullanıyoruz.
-        # Bu yöntem GitHub Actions'ta daha stabil çalışıyor.
         ticker = yf.Ticker(symbol)
         
-        # Sadece son 3.5 ay yeterli
-        hist = ticker.history(period="4mo")
+        # Daha uzun bir periyot çekelim ki tatilleri atlayabilelim
+        hist = ticker.history(period="6mo")
         
-        if len(hist) < 5:
-            # Boş geldiyse az bekle tekrar dene (basit retry)
-            time.sleep(1)
-            hist = ticker.history(period="4mo")
-            if len(hist) < 5:
-                print(f"- {symbol}: Veri yok veya eksik.")
-                return None
+        # Boş veri kontrolü
+        if hist.empty:
+            print(f"- {symbol}: Veri yok (Empty)")
+            return None
+        
+        # Sadece Kapanış fiyatlarını al ve NaN değerleri temizle
+        closes = hist['Close'].dropna()
+        
+        # En az 2 günlük veri lazım (Bugün ve Dün)
+        if len(closes) < 2:
+            print(f"- {symbol}: Yetersiz veri ({len(closes)} gün)")
+            return None
 
-        current_price = hist['Close'].iloc[-1]
+        current_price = closes.iloc[-1]
+        last_date = closes.index[-1]
         
-        # Tarih filtreleme
-        def get_price_days_ago(days):
-            target_date = datetime.now() - timedelta(days=days)
+        # Yardımcı fonksiyon: Belirli bir gün öncesine git, yoksa en yakın önceki günü bul
+        def get_price_at_delta(days_back):
             try:
-                idx = hist.index.get_indexer([target_date], method='nearest')[0]
-                return hist['Close'].iloc[idx]
-            except:
-                return hist['Close'].iloc[0]
+                # Hedef tarih: Bugün - X gün
+                target_date = last_date - timedelta(days=days_back)
+                
+                # asof: Hedef tarihten önceki en son geçerli iş günü verisini bulur
+                # Bu, hafta sonları ve tatillerdeki "sabit kalma" sorununu çözer
+                idx = closes.index.asof(target_date)
+                
+                if pd.isna(idx): # Eğer tarih çok eskiyse ve veri yoksa
+                    return closes.iloc[0] # En eski veriyi dön
+                
+                return closes.loc[idx]
+            except Exception as e:
+                return closes.iloc[0]
 
-        price_1d = hist['Close'].iloc[-2]
-        price_1w = get_price_days_ago(7)
-        price_1m = get_price_days_ago(30)
-        price_3m = get_price_days_ago(90)
+        # 1 Gün Önce (Bir önceki kapanış)
+        price_1d = closes.iloc[-2]
+        
+        # Diğer periyotlar (Takvim günü bazlı değil, işlem günü bazlı arama)
+        price_1w = get_price_at_delta(7)
+        price_1m = get_price_at_delta(30)
+        price_3m = get_price_at_delta(90)
 
         # Hacim kontrolü
         vol = 0
         if 'Volume' in hist.columns:
-            vol = hist['Volume'].iloc[-1]
-            if pd.isna(vol): vol = 0
+            vol_series = hist['Volume'].dropna()
+            if not vol_series.empty:
+                vol = vol_series.iloc[-1]
 
         return {
             'last_price': round(float(current_price), 2),
@@ -177,7 +193,6 @@ def fetch_single_ticker(symbol):
         }
 
     except Exception as e:
-        # Hata olsa bile kodu durdurma, sadece logla
         # print(f"Hata ({symbol}): {e}") 
         return None
 
@@ -186,7 +201,7 @@ def chunk_list(lst, n):
         yield lst[i:i + n]
 
 def main():
-    print("Veri Çekme Başlıyor (Tekli Mod - Güvenli)...")
+    print("Veri Çekme Başlıyor (Gelişmiş Hesaplama Modu)...")
     
     # 1. Tüm sembolleri topla
     all_symbols = list(INDICES.keys())
@@ -208,15 +223,13 @@ def main():
     results_indices = []
     results_stocks = []
 
-    # 2. Her sembolü tek tek gez (yavaş ama güvenli)
+    # 2. Her sembolü tek tek gez
     for i, symbol in enumerate(all_symbols):
-        # İlerleme çubuğu gibi çıktı verelim
         if i % 10 == 0:
             print(f"İlerleme: {i}/{total_symbols}...")
         
         stats = fetch_single_ticker(symbol)
         
-        # Veri geldiyse işle
         if stats:
             clean_code = symbol.replace('.IS', '')
 
@@ -248,15 +261,13 @@ def main():
                     'updated_at': datetime.now().isoformat()
                 })
         
-        # Rate limit yememek için her istek arası minik bekleme
         time.sleep(0.3)
 
-    # 3. Veritabanına Yaz (Toplu)
+    # 3. Veritabanına Yaz
     print("Veritabanına yazılıyor...")
     
     if results_indices:
         try:
-            # 100'erli paketler halinde upsert
             for chunk in chunk_list(results_indices, 100):
                 supabase.table('bist_indices').upsert(chunk).execute()
             print(f"✅ {len(results_indices)} endeks güncellendi.")
