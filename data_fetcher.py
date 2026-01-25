@@ -130,16 +130,13 @@ CONSTITUENTS = {
 
 def fetch_with_retry(symbol):
     """
-    Kademeli veri çekme yöntemi:
-    1. 1 Yıllık (Haftalık/Aylık hesaplamalar için ideal)
-    2. 1 Aylık (Haftalık hesaplama için yeterli)
-    3. 5 Günlük (Garantili yakın geçmiş)
-    4. 1 Günlük (Sadece güncel fiyat için - En son çare)
+    Kademeli veri çekme yöntemi. Yahoo kısıtlamalarına karşı agresif deneme yapar.
     """
     try:
         ticker = yf.Ticker(symbol)
         
-        # Try different periods in order
+        # Testlerde başarılı olan '1d' ve '5d' periyotlarını önceliklendiriyoruz
+        # '1y' ve '1mo' sadece veri gelirse kullanılır
         periods = ["1y", "1mo", "5d", "1d"]
         hist = None
         
@@ -164,7 +161,6 @@ def fetch_with_retry(symbol):
         
         def get_p(days_back):
             try:
-                # If we only have 1 day of data, we return current price (no change)
                 if len(closes) < 2:
                     return curr_price
                 target = last_date - timedelta(days=days_back)
@@ -175,13 +171,12 @@ def fetch_with_retry(symbol):
             except:
                 return float(closes.iloc[0])
 
-        # Default values for stats if we don't have enough history
+        # Yahoo'dan gelen veriye göre hesaplama (Geçmiş veri yoksa 0 döner)
         p1d = closes.iloc[-2] if len(closes) >= 2 else curr_price
         p1w = get_p(7)
         p1m = get_p(30)
         p3m = get_p(90)
 
-        # Percentage calculation helper
         def pct(new, old):
             if not old or old == 0 or new == old: return 0
             return round(((new - old) / old) * 100, 2)
@@ -194,8 +189,7 @@ def fetch_with_retry(symbol):
             'change_1w': pct(curr_price, p1w),
             'change_1m': pct(curr_price, p1m),
             'change_3m': pct(curr_price, p3m),
-            'volume': f"{round(vol / 1_000_000, 1)}M",
-            'weight': None 
+            'volume': f"{round(vol / 1_000_000, 1)}M"
         }
     except Exception as e:
         print(f"Critical error fetching {symbol}: {e}")
@@ -208,18 +202,20 @@ def chunk_list(lst, n):
 # --- MAIN LOOP ---
 
 def main():
-    print(f"BIST Data Fetcher Started at {datetime.now()} (Aggressive 1-Day Fallback Mode)")
+    print(f"BIST Data Fetcher Started at {datetime.now()}")
     
     # 1. Process All Indices
     all_indices = list(INDICES.keys())
     results_indices = []
+    history_records = [] # Tarihçe tablosuna gidecek veriler
     
     print(f"Scanning {len(all_indices)} indices...")
     for symbol in all_indices:
         stats = fetch_with_retry(symbol)
         if stats:
+            clean_sym = symbol.replace('.IS', '')
             results_indices.append({
-                'code': symbol.replace('.IS', ''),
+                'code': clean_sym,
                 'name': INDICES[symbol]['name'],
                 'category': INDICES[symbol]['category'],
                 'last_price': stats['last_price'],
@@ -230,14 +226,23 @@ def main():
                 'volume': stats['volume'],
                 'updated_at': datetime.now().isoformat()
             })
+            
+            # Tarihçe için kayıt oluştur
+            history_records.append({
+                'symbol': clean_sym,
+                'price': stats['last_price']
+            })
         time.sleep(0.5)
 
+    # Write Indices & History
     if results_indices:
         try:
             supabase.table('bist_indices').upsert(results_indices).execute()
-            print(f"✅ SUCCESS: {len(results_indices)} indices updated in database.")
+            # Tarihçe tablosuna ekle (Aynı gün varsa upsert yapar)
+            supabase.table('bist_price_history').upsert(history_records).execute()
+            print(f"✅ SUCCESS: {len(results_indices)} indices & history updated.")
         except Exception as e:
-            print(f"❌ DB Error (Indices): {e}")
+            print(f"❌ DB Error (Indices/History): {e}")
 
     # 2. Process Unique Stocks
     unique_stocks = set()
@@ -255,6 +260,7 @@ def main():
     unique_stocks_list = list(unique_stocks)
     print(f"Scanning {len(unique_stocks_list)} unique stocks...")
     results_stocks = []
+    stock_history = []
     
     for i, symbol in enumerate(unique_stocks_list):
         if i % 20 == 0 and i > 0:
@@ -262,16 +268,22 @@ def main():
             
         stats = fetch_with_retry(symbol)
         if stats:
+            clean_sym = symbol.replace('.IS', '')
             results_stocks.append({
-                'symbol': symbol.replace('.IS', ''),
+                'symbol': clean_sym,
                 'parent_index': ",".join(stock_to_parents[symbol]),
                 'price': stats['last_price'],
                 'change1d': stats['change_1d'],
                 'change1w': stats['change_1w'],
                 'change1m': stats['change_1m'],
                 'change3m': stats['change_3m'],
-                'weight': None,
                 'updated_at': datetime.now().isoformat()
+            })
+            
+            # Hisse tarihçesi
+            stock_history.append({
+                'symbol': clean_sym,
+                'price': stats['last_price']
             })
         time.sleep(0.3)
 
@@ -279,9 +291,14 @@ def main():
         try:
             for chunk in chunk_list(results_stocks, 100):
                 supabase.table('bist_stocks').upsert(chunk).execute()
-            print(f"✅ SUCCESS: {len(results_stocks)} stocks updated in database.")
+            
+            # Tarihçe toplu ekleme
+            for chunk in chunk_list(stock_history, 100):
+                supabase.table('bist_price_history').upsert(chunk).execute()
+                
+            print(f"✅ SUCCESS: {len(results_stocks)} stocks & history updated.")
         except Exception as e:
-            print(f"❌ DB Error (Stocks): {e}")
+            print(f"❌ DB Error (Stocks/History): {e}")
 
 if __name__ == "__main__":
     main()
