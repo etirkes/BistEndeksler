@@ -1,5 +1,5 @@
 yfinance>=0.2.40
 pandas
 supabase
-tvDatafeed
 websocket-client
+git+https://www.google.com/search?q=https://github.com/ali-raza-bhagani/tvDatafeed.git
