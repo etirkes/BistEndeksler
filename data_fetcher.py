@@ -5,17 +5,17 @@ import os
 import time
 from datetime import datetime, timedelta
 
-# --- AYARLAR ---
+# --- SETTINGS ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Hata: SUPABASE_URL ve SUPABASE_KEY tanımlı değil.")
+    print("Error: SUPABASE_URL and SUPABASE_KEY are not defined.")
 
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
-    print(f"Supabase bağlantı hatası: {e}")
+    print(f"Supabase connection error: {e}")
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -126,28 +126,34 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
-# --- YARDIMCI FONKSİYONLAR ---
+# --- HELPER FUNCTIONS ---
 
 def fetch_with_retry(symbol):
-    """Veriyi çekmek için kademeli (Daha inatçı) yöntem"""
+    """
+    Kademeli veri çekme yöntemi:
+    1. 1 Yıllık (Haftalık/Aylık hesaplamalar için ideal)
+    2. 1 Aylık (Haftalık hesaplama için yeterli)
+    3. 5 Günlük (Sadece güncel fiyat için - Test kodunun başarılı olduğu periyot)
+    """
     try:
         ticker = yf.Ticker(symbol)
         
-        # 1. Deneme: 1 Yıllık Veri
+        # Try 1 Year first
         hist = ticker.history(period="1y")
+        is_fallback = False
         
         if hist.empty or len(hist) < 2:
-            # 2. Deneme: 1 Aylık Veri
+            print(f"  ! {symbol}: 1-year failed, trying 1-month...")
             hist = ticker.history(period="1mo")
-            
             if hist.empty or len(hist) < 2:
-                # 3. Deneme: 5 Günlük Veri
+                print(f"  !! {symbol}: 1-month failed, trying 5-day...")
                 hist = ticker.history(period="5d")
+                is_fallback = True
 
         if hist.empty:
             return None
             
-        # Timezone temizliği (Naive conversion)
+        # Clean timezone
         if hasattr(hist.index, 'tz_localize'):
             hist.index = hist.index.tz_localize(None)
         
@@ -160,9 +166,12 @@ def fetch_with_retry(symbol):
         
         def get_p(days_back):
             try:
+                # If we are in fallback (5-day), we can't look back 30 or 90 days.
                 target = last_date - timedelta(days=days_back)
                 idx = closes.index.asof(target)
-                return float(closes.loc[idx]) if not pd.isna(idx) else float(closes.iloc[0])
+                if pd.isna(idx):
+                    return float(closes.iloc[0]) # Fallback to oldest available
+                return float(closes.loc[idx])
             except:
                 return float(closes.iloc[0])
 
@@ -171,9 +180,16 @@ def fetch_with_retry(symbol):
         p1m = get_p(30)
         p3m = get_p(90)
 
+        # Percentage calculation helper
         def pct(new, old):
             if not old or old == 0: return 0
-            return round(((new - old) / old) * 100, 2)
+            val = round(((new - old) / old) * 100, 2)
+            # If we only have 5 days of data, 1m and 3m changes might be 
+            # misleadingly based on the 1st day of those 5 days.
+            return val
+
+        # Handle weight (yfinance doesn't provide this directly, using placeholder)
+        weight = None 
 
         vol = float(hist['Volume'].iloc[-1]) if 'Volume' in hist.columns else 0
 
@@ -183,38 +199,27 @@ def fetch_with_retry(symbol):
             'change_1w': pct(curr_price, p1w),
             'change_1m': pct(curr_price, p1m),
             'change_3m': pct(curr_price, p3m),
-            'volume': f"{round(vol / 1_000_000, 1)}M"
+            'volume': f"{round(vol / 1_000_000, 1)}M",
+            'weight': weight
         }
     except Exception as e:
-        print(f"Hata ({symbol}): {e}")
+        print(f"Critical error fetching {symbol}: {e}")
         return None
 
 def chunk_list(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-# --- ANA DÖNGÜ ---
+# --- MAIN LOOP ---
 
 def main():
-    print("BIST Veri Akışı Başladı (Endeks + Hisse Hybrid)...")
+    print(f"BIST Data Fetcher Started at {datetime.now()} (Multi-Period Retry Mode)")
     
-    # 1. Tüm Sembolleri Belirle
+    # 1. Process All Indices
     all_indices = list(INDICES.keys())
-    unique_stocks = set()
-    stock_to_parents = {} # Hisse -> Ait olduğu endeksler (virgülle ayrılmış)
-
-    for index_code, stock_list in CONSTITUENTS.items():
-        clean_idx = index_code.replace('.IS', '')
-        for s in stock_list:
-            unique_stocks.add(s)
-            if s not in stock_to_parents:
-                stock_to_parents[s] = []
-            if clean_idx not in stock_to_parents[s]:
-                stock_to_parents[s].append(clean_idx)
-
-    # --- ENDEKSLERİ İŞLE ---
-    print(f"{len(all_indices)} endeks taranıyor...")
     results_indices = []
+    
+    print(f"Scanning {len(all_indices)} indices...")
     for symbol in all_indices:
         stats = fetch_with_retry(symbol)
         if stats:
@@ -230,24 +235,36 @@ def main():
                 'volume': stats['volume'],
                 'updated_at': datetime.now().isoformat()
             })
-        time.sleep(0.5)
+        time.sleep(0.5) # Anti-ban delay
 
-    # Endeksleri DB'ye yaz
+    # Write Indices
     if results_indices:
         try:
             supabase.table('bist_indices').upsert(results_indices).execute()
-            print(f"✅ {len(results_indices)} endeks güncellendi.")
+            print(f"✅ SUCCESS: {len(results_indices)} indices updated in database.")
         except Exception as e:
-            print(f"❌ DB Hata (Endeks): {e}")
+            print(f"❌ DB Error (Indices): {e}")
 
-    # --- HİSSELERİ İŞLE ---
+    # 2. Process Unique Stocks
+    unique_stocks = set()
+    stock_to_parents = {}
+
+    for index_code, stock_list in CONSTITUENTS.items():
+        clean_idx = index_code.replace('.IS', '')
+        for s in stock_list:
+            unique_stocks.add(s)
+            if s not in stock_to_parents:
+                stock_to_parents[s] = []
+            if clean_idx not in stock_to_parents[s]:
+                stock_to_parents[s].append(clean_idx)
+
     unique_stocks_list = list(unique_stocks)
-    print(f"{len(unique_stocks_list)} benzersiz hisse taranıyor...")
+    print(f"Scanning {len(unique_stocks_list)} unique stocks...")
     results_stocks = []
     
     for i, symbol in enumerate(unique_stocks_list):
         if i % 20 == 0 and i > 0:
-            print(f"Hisse İlerleme: {i}/{len(unique_stocks_list)}...")
+            print(f"  Stock progress: {i}/{len(unique_stocks_list)}...")
             
         stats = fetch_with_retry(symbol)
         if stats:
@@ -259,18 +276,19 @@ def main():
                 'change1w': stats['change_1w'],
                 'change1m': stats['change_1m'],
                 'change3m': stats['change_3m'],
+                'weight': stats['weight'],
                 'updated_at': datetime.now().isoformat()
             })
         time.sleep(0.3)
 
-    # Hisseleri DB'ye yaz (Toplu Paketler Halinde)
+    # Write Stocks in chunks
     if results_stocks:
         try:
             for chunk in chunk_list(results_stocks, 100):
                 supabase.table('bist_stocks').upsert(chunk).execute()
-            print(f"✅ {len(results_stocks)} hisse güncellendi.")
+            print(f"✅ SUCCESS: {len(results_stocks)} stocks updated in database.")
         except Exception as e:
-            print(f"❌ DB Hata (Hisse): {e}")
+            print(f"❌ DB Error (Stocks): {e}")
 
 if __name__ == "__main__":
     main()
