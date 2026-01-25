@@ -5,17 +5,17 @@ import os
 import time
 from datetime import datetime, timedelta
 
-# --- SETTINGS ---
+# --- AYARLAR ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Error: SUPABASE_URL and SUPABASE_KEY are not defined.")
+    print("Hata: SUPABASE_URL veya SUPABASE_KEY eksik.")
 
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
-    print(f"Supabase connection error: {e}")
+    print(f"Bağlantı hatası: {e}")
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -126,17 +126,15 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
-# --- HELPER FUNCTIONS ---
+# --- YARDIMCI HESAPLAMA ---
 
 def fetch_with_retry(symbol):
     """
-    Kademeli veri çekme yöntemi. Yahoo kısıtlamalarına karşı agresif deneme yapar.
+    Kademeli veri çekme yöntemi:
+    Yahoo kısıtlamalarına karşı 1y -> 1mo -> 5d -> 1d dener.
     """
     try:
         ticker = yf.Ticker(symbol)
-        
-        # Testlerde başarılı olan '1d' ve '5d' periyotlarını önceliklendiriyoruz
-        # '1y' ve '1mo' sadece veri gelirse kullanılır
         periods = ["1y", "1mo", "5d", "1d"]
         hist = None
         
@@ -148,31 +146,25 @@ def fetch_with_retry(symbol):
         if hist is None or hist.empty:
             return None
             
-        # Clean timezone
         if hasattr(hist.index, 'tz_localize'):
             hist.index = hist.index.tz_localize(None)
         
         closes = hist['Close'].dropna()
-        if len(closes) < 1:
-            return None
+        if len(closes) < 1: return None
 
         curr_price = float(closes.iloc[-1])
         last_date = closes.index[-1]
         
         def get_p(days_back):
             try:
-                if len(closes) < 2:
-                    return curr_price
+                if len(closes) < 2: return curr_price
                 target = last_date - timedelta(days=days_back)
                 idx = closes.index.asof(target)
-                if pd.isna(idx):
-                    return float(closes.iloc[0]) 
-                return float(closes.loc[idx])
+                return float(closes.loc[idx]) if not pd.isna(idx) else float(closes.iloc[0])
             except:
                 return float(closes.iloc[0])
 
-        # Yahoo'dan gelen veriye göre hesaplama (Geçmiş veri yoksa 0 döner)
-        p1d = closes.iloc[-2] if len(closes) >= 2 else curr_price
+        p1d = float(closes.iloc[-2]) if len(closes) >= 2 else curr_price
         p1w = get_p(7)
         p1m = get_p(30)
         p3m = get_p(90)
@@ -192,32 +184,26 @@ def fetch_with_retry(symbol):
             'volume': f"{round(vol / 1_000_000, 1)}M"
         }
     except Exception as e:
-        print(f"Critical error fetching {symbol}: {e}")
+        print(f"Error fetching {symbol}: {e}")
         return None
 
-def chunk_list(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
-# --- MAIN LOOP ---
-
 def main():
-    print(f"BIST Data Fetcher Started at {datetime.now()}")
+    print(f"BIST Data Fetcher Started: {datetime.now()}")
     
-    # 1. Process All Indices
-    all_indices = list(INDICES.keys())
     results_indices = []
-    history_records = [] # Tarihçe tablosuna gidecek veriler
+    results_stocks = []
+    history_batch = [] # bist_price_history tablosuna gidecekler
     
-    print(f"Scanning {len(all_indices)} indices...")
-    for symbol in all_indices:
+    # --- ENDEKSLER ---
+    print(f"Processing {len(INDICES)} indices...")
+    for symbol, info in INDICES.items():
         stats = fetch_with_retry(symbol)
         if stats:
             clean_sym = symbol.replace('.IS', '')
             results_indices.append({
                 'code': clean_sym,
-                'name': INDICES[symbol]['name'],
-                'category': INDICES[symbol]['category'],
+                'name': info['name'],
+                'category': info['category'],
                 'last_price': stats['last_price'],
                 'change1d': stats['change_1d'],
                 'change1w': stats['change_1w'],
@@ -226,46 +212,25 @@ def main():
                 'volume': stats['volume'],
                 'updated_at': datetime.now().isoformat()
             })
-            
-            # Tarihçe için kayıt oluştur
-            history_records.append({
+            # Tarihçe için kayıt
+            history_batch.append({
                 'symbol': clean_sym,
                 'price': stats['last_price']
             })
         time.sleep(0.5)
 
-    # Write Indices & History
-    if results_indices:
-        try:
-            supabase.table('bist_indices').upsert(results_indices).execute()
-            # Tarihçe tablosuna ekle (Aynı gün varsa upsert yapar)
-            supabase.table('bist_price_history').upsert(history_records).execute()
-            print(f"✅ SUCCESS: {len(results_indices)} indices & history updated.")
-        except Exception as e:
-            print(f"❌ DB Error (Indices/History): {e}")
-
-    # 2. Process Unique Stocks
+    # --- HİSSELER ---
     unique_stocks = set()
     stock_to_parents = {}
-
-    for index_code, stock_list in CONSTITUENTS.items():
-        clean_idx = index_code.replace('.IS', '')
+    for idx_code, stock_list in CONSTITUENTS.items():
+        clean_idx = idx_code.replace('.IS', '')
         for s in stock_list:
             unique_stocks.add(s)
-            if s not in stock_to_parents:
-                stock_to_parents[s] = []
-            if clean_idx not in stock_to_parents[s]:
-                stock_to_parents[s].append(clean_idx)
+            if s not in stock_to_parents: stock_to_parents[s] = []
+            if clean_idx not in stock_to_parents[s]: stock_to_parents[s].append(clean_idx)
 
-    unique_stocks_list = list(unique_stocks)
-    print(f"Scanning {len(unique_stocks_list)} unique stocks...")
-    results_stocks = []
-    stock_history = []
-    
-    for i, symbol in enumerate(unique_stocks_list):
-        if i % 20 == 0 and i > 0:
-            print(f"  Stock progress: {i}/{len(unique_stocks_list)}...")
-            
+    print(f"Processing {len(unique_stocks)} stocks...")
+    for i, symbol in enumerate(list(unique_stocks)):
         stats = fetch_with_retry(symbol)
         if stats:
             clean_sym = symbol.replace('.IS', '')
@@ -279,26 +244,33 @@ def main():
                 'change3m': stats['change_3m'],
                 'updated_at': datetime.now().isoformat()
             })
-            
-            # Hisse tarihçesi
-            stock_history.append({
+            # Tarihçe için kayıt
+            history_batch.append({
                 'symbol': clean_sym,
                 'price': stats['last_price']
             })
-        time.sleep(0.3)
+        if i % 20 == 0: time.sleep(0.3)
 
-    if results_stocks:
-        try:
-            for chunk in chunk_list(results_stocks, 100):
-                supabase.table('bist_stocks').upsert(chunk).execute()
-            
-            # Tarihçe toplu ekleme
-            for chunk in chunk_list(stock_history, 100):
-                supabase.table('bist_price_history').upsert(chunk).execute()
-                
-            print(f"✅ SUCCESS: {len(results_stocks)} stocks & history updated.")
-        except Exception as e:
-            print(f"❌ DB Error (Stocks/History): {e}")
+    # --- YAZMA İŞLEMİ (UPSERT) ---
+    try:
+        # 1. Endeksleri güncelle
+        if results_indices:
+            supabase.table('bist_indices').upsert(results_indices).execute()
+        
+        # 2. Hisseleri güncelle (Batch)
+        if results_stocks:
+            for i in range(0, len(results_stocks), 100):
+                supabase.table('bist_stocks').upsert(results_stocks[i:i + 100]).execute()
+        
+        # 3. Tarihçe kaydını yap (Batch)
+        if history_batch:
+            # UNIQUE constraint sayesinde aynı gün aynı sembolü sadece günceller
+            for i in range(0, len(history_batch), 100):
+                supabase.table('bist_price_history').upsert(history_batch[i:i + 100]).execute()
+        
+        print(f"✅ SUCCESS: Data & History updated successfully.")
+    except Exception as e:
+        print(f"❌ DB ERROR: {e}")
 
 if __name__ == "__main__":
     main()
