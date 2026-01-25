@@ -1,5 +1,4 @@
-git+https://github.com/ali-raza-bhagani/tvDatafeed.git
 pandas
 yfinance
 supabase
-websocket-client
+
