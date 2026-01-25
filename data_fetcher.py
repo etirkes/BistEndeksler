@@ -20,12 +20,26 @@ try:
 except Exception as e:
     print(f"Supabase bağlantı hatası: {e}")
 
-# --- İSTEK AYARLARI ---
-# User-Agent tanımlaması (Tarayıcı gibi görünmek için)
-session = requests.Session()
-session.headers.update({
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-})
+# --- USER AGENT HAVUZU ---
+# Yahoo'yu atlatmak için farklı tarayıcı kimlikleri
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+]
+
+def get_session():
+    """Rastgele bir User-Agent ile session oluşturur"""
+    session = requests.Session()
+    session.headers.update({
+        'User-Agent': random.choice(USER_AGENTS),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    })
+    return session
 
 # Takip Edilecek Endeksler
 INDICES = {
@@ -164,16 +178,19 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
-
 def process_ticker_data(df, symbol):
     """Pandas DataFrame'inden tekil hisse verisini hesaplar"""
     try:
-        # Sembol dataframe'de yoksa atla
-        if symbol not in df['Close'].columns:
-            return None
-            
-        close_series = df['Close'][symbol].dropna()
-        volume_series = df['Volume'][symbol] if symbol in df['Volume'].columns else None
+        # MultiIndex kontrolü (yfinance toplu indirmede format değiştirebilir)
+        if isinstance(df.columns, pd.MultiIndex):
+            if symbol not in df['Close'].columns:
+                return None
+            close_series = df['Close'][symbol].dropna()
+            volume_series = df['Volume'][symbol] if symbol in df['Volume'].columns else None
+        else:
+            # Tekil indirme durumu
+            close_series = df['Close'].dropna()
+            volume_series = df['Volume']
 
         if len(close_series) < 5:
             return None
@@ -217,9 +234,9 @@ def chunk_list(lst, n):
         yield lst[i:i + n]
 
 def main():
-    print("Batch Veri Çekme İşlemi Başlıyor...")
+    print("Defansif Veri Çekme İşlemi Başlıyor...")
 
-    # 1. Sembol Listesi Hazırla
+    # 1. Sembol Listesi
     all_symbols = list(INDICES.keys())
     stock_to_indices = {}
     
@@ -236,27 +253,45 @@ def main():
     total_symbols = len(all_symbols)
     print(f"Toplam {total_symbols} adet sembol işlenecek.")
 
-    # 2. BATCH DOWNLOAD (Parça Parça İndir)
-    BATCH_SIZE = 30 # Her seferde 30 hisse indir (Güvenli limit)
+    # 2. BATCH DOWNLOAD (Daha küçük paketler, threads KAPALI)
+    BATCH_SIZE = 10  # DÜŞÜRÜLDÜ: Daha güvenli limit
     
     batch_indices = []
     batch_stocks = []
     processed_count = 0
 
-    # Listeyi parçalara böl ve döngüye sok
     for batch in chunk_list(all_symbols, BATCH_SIZE):
         try:
             print(f"İndiriliyor: {len(batch)} adet sembol... ({processed_count}/{total_symbols})")
             
-            # Yahoo'dan indir
-            df = yf.download(batch, period="6mo", interval="1d", group_by='ticker', auto_adjust=False, threads=True, progress=False)
+            # YENİ SESSİON: Her batch için yeni bir User-Agent al
+            current_session = get_session()
+
+            # TEKRAR DENEME (RETRY) DÖNGÜSÜ
+            max_retries = 3
+            df = pd.DataFrame()
             
+            for attempt in range(max_retries):
+                try:
+                    # threads=False ÖNEMLİ: Eşzamanlı istekleri kapatır, bot gibi görünmeyi engeller
+                    df = yf.download(batch, period="6mo", interval="1d", 
+                                   group_by='ticker', auto_adjust=False, 
+                                   threads=False, progress=False, session=current_session)
+                    
+                    if not df.empty:
+                        break # Veri geldiyse döngüden çık
+                    else:
+                        print(f"   Deneme {attempt+1}: Veri boş, bekleniyor...")
+                        time.sleep(10 * (attempt + 1)) # Artan bekleme süresi
+                except Exception as e:
+                    print(f"   Deneme {attempt+1} hatası: {e}")
+                    time.sleep(5)
+
             if df.empty:
-                print("UYARI: Bu batch boş döndü, Yahoo engellemiş olabilir.")
-                time.sleep(5)
+                print("UYARI: Bu batch için veri alınamadı, atlanıyor.")
                 continue
 
-            # İndirilen veriyi işle
+            # Veriyi işle
             for symbol in batch:
                 stats = process_ticker_data(df, symbol)
                 if not stats:
@@ -296,19 +331,22 @@ def main():
                     batch_stocks.append(stock_record)
             
             processed_count += len(batch)
-            # Her batch sonrası kısa bir bekleme (IP ban yememek için)
-            time.sleep(2)
+            
+            # Her batch sonrası rastgele uzun bekleme (5-10 saniye)
+            # Bu, Yahoo'nun "bu bir insan" diye düşünmesini sağlar
+            sleep_time = random.uniform(5, 10)
+            print(f"   Bekleniyor: {sleep_time:.1f} saniye...")
+            time.sleep(sleep_time)
 
         except Exception as e:
-            print(f"Batch Hatası: {e}")
+            print(f"Genel Batch Hatası: {e}")
             continue
 
     print("İndirme tamamlandı. Veritabanına yazılıyor...")
 
-    # 3. Supabase'e Yaz (Toplu)
+    # 3. Supabase'e Yaz
     if batch_indices:
         try:
-            # 100'erli paketler halinde yaz (Supabase limiti için)
             for chunk in chunk_list(batch_indices, 100):
                 supabase.table('bist_indices').upsert(chunk).execute()
             print(f"BAŞARILI: {len(batch_indices)} endeks veritabanına yazıldı.")
