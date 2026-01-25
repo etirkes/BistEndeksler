@@ -2,5 +2,4 @@ yfinance>=0.2.40
 pandas
 supabase
 websocket-client
-tvdatafeed==2.1.0
-
+tvdatafeed
