@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timedelta
 
 # --- AYARLAR ---
+# GitHub Secrets veya yerel .env dosyasından okunur
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -126,13 +127,16 @@ CONSTITUENTS = {
     'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
+# --- YARDIMCI HESAPLAMA --
+
 def fetch_with_retry(symbol):
     """
-    Kademeli veri çekme: 1y -> 1mo -> 5d -> 1d
-    YENİ: 2. Hafta ve 3. Hafta değişimleri eklendi.
+    Yahoo Finance'den veri çeker.
+    Eklenenler: 2. Hafta (14 gün) ve 3. Hafta (21 gün) değişimleri.
     """
     try:
         ticker = yf.Ticker(symbol)
+        # Veri çekme denemeleri (Kısa periyottan uzuna)
         periods = ["1y", "1mo", "5d", "1d"]
         hist = None
         
@@ -144,6 +148,7 @@ def fetch_with_retry(symbol):
         if hist is None or hist.empty:
             return None
             
+        # Timezone temizliği
         if hasattr(hist.index, 'tz_localize'):
             hist.index = hist.index.tz_localize(None)
         
@@ -153,26 +158,26 @@ def fetch_with_retry(symbol):
         curr_price = float(closes.iloc[-1])
         last_date = closes.index[-1]
         
-        # Belirli gün öncesindeki fiyatı bulan yardımcı fonksiyon
+        # Geçmiş tarihli fiyatı bulan yardımcı fonksiyon
         def get_p(days_back):
             try:
                 if len(closes) < 2: return curr_price
                 target = last_date - timedelta(days=days_back)
-                # target tarihine en yakın önceki iş günü
+                # target tarihine en yakın önceki iş günü (method='pad' mantığıyla asof)
                 idx = closes.index.asof(target)
                 return float(closes.loc[idx]) if not pd.isna(idx) else float(closes.iloc[0])
             except:
                 return float(closes.iloc[0])
 
+        # Referans Fiyatlar
         p1d = float(closes.iloc[-2]) if len(closes) >= 2 else curr_price
-        
-        # --- YENİ PERİYOTLAR ---
-        p1w = get_p(7)   # 1 Hafta Önce
-        p2w = get_p(14)  # 2 Hafta Önce (YENİ)
-        p3w = get_p(21)  # 3 Hafta Önce (YENİ)
-        p1m = get_p(30)  # 1 Ay Önce
-        p3m = get_p(90)  # 3 Ay Önce (Eski kod silinmedi, hala hesaplanıyor)
+        p1w = get_p(7)   # 1 Hafta
+        p2w = get_p(14)  # 2 Hafta (YENİ)
+        p3w = get_p(21)  # 3 Hafta (YENİ)
+        p1m = get_p(30)  # 1 Ay
+        p3m = get_p(90)  # 3 Ay (Mevcut kalıyor)
 
+        # Yüzde hesaplama
         def pct(new, old):
             if not old or old == 0 or new == old: return 0
             return round(((new - old) / old) * 100, 2)
@@ -186,7 +191,7 @@ def fetch_with_retry(symbol):
             'change_2w': pct(curr_price, p2w), # YENİ
             'change_3w': pct(curr_price, p3w), # YENİ
             'change_1m': pct(curr_price, p1m),
-            'change_3m': pct(curr_price, p3m), # Eski
+            'change_3m': pct(curr_price, p3m), # Mevcut
             'volume': f"{round(vol / 1_000_000, 1)}M"
         }
     except Exception as e:
@@ -200,8 +205,7 @@ def main():
     results_stocks = []
     history_batch = [] 
     
-    # --- ENDEKSLERİ İŞLE ---
-    # Not: INDICES sözlüğünü senin dosyadaki gibi kullanıyorum
+    # --- 1. ENDEKSLERİ İŞLE ---
     print(f"Processing Indices...") 
     for symbol, info in INDICES.items():
         stats = fetch_with_retry(symbol)
@@ -217,20 +221,24 @@ def main():
                 'change2w': stats['change_2w'], # YENİ
                 'change3w': stats['change_3w'], # YENİ
                 'change1m': stats['change_1m'],
-                'change3m': stats['change_3m'], # Eski (Silinmedi)
+                'change3m': stats['change_3m'],
                 'volume': stats['volume'],
                 'updated_at': datetime.now().isoformat()
             })
-            history_batch.append({'symbol': clean_sym, 'price': stats['last_price']})
+            # Tarihçe için (Günde 2 kez çalışsa da tek kayıt olması için 'date' ekledik)
+            history_batch.append({
+                'symbol': clean_sym,
+                'price': stats['last_price'],
+                'date': datetime.now().strftime('%Y-%m-%d') # YENİ: Sadece tarih (Saat yok)
+            })
         time.sleep(0.5)
 
-    # --- HİSSELERİ İŞLE ---
-    # Not: CONSTITUENTS sözlüğünü senin dosyadaki gibi kullanıyorum
+    # --- 2. HİSSELERİ İŞLE ---
     unique_stocks = set()
     stock_to_parents = {}
     
-    # Senin kodundaki hisse listesi hazırlama mantığı (AYNI)
-    if 'CONSTITUENTS' in globals():
+    # CONSTITUENTS listesinden hisseleri ve ait oldukları endeksleri çıkar
+    if CONSTITUENTS:
         for idx_code, stock_list in CONSTITUENTS.items():
             clean_idx = idx_code.replace('.IS', '')
             for s in stock_list:
@@ -252,26 +260,35 @@ def main():
                 'change2w': stats['change_2w'], # YENİ
                 'change3w': stats['change_3w'], # YENİ
                 'change1m': stats['change_1m'],
-                'change3m': stats['change_3m'], # Eski (Silinmedi)
+                'change3m': stats['change_3m'],
                 'updated_at': datetime.now().isoformat()
             })
-            history_batch.append({'symbol': clean_sym, 'price': stats['last_price']})
+            # Tarihçe için
+            history_batch.append({
+                'symbol': clean_sym,
+                'price': stats['last_price'],
+                'date': datetime.now().strftime('%Y-%m-%d') # YENİ: Sadece tarih
+            })
         if i % 20 == 0: time.sleep(0.3)
 
-    # --- KAYIT (UPSERT) ---
+    # --- 3. VERİTABANINA YAZMA (UPSERT) ---
     try:
+        # Endeksleri güncelle
         if results_indices:
             supabase.table('bist_indices').upsert(results_indices).execute()
         
+        # Hisseleri güncelle (Parça parça)
         if results_stocks:
             for i in range(0, len(results_stocks), 100):
                 supabase.table('bist_stocks').upsert(results_stocks[i:i + 100]).execute()
         
+        # Tarihçeyi güncelle (Parça parça)
+        # Not: SQL tarafında (symbol, date) UNIQUE constraint'i olmalı.
         if history_batch:
             for i in range(0, len(history_batch), 100):
                 supabase.table('bist_price_history').upsert(history_batch[i:i + 100]).execute()
         
-        print(f"✅ SUCCESS: Data (including new weeks) updated successfully.")
+        print(f"✅ SUCCESS: Data updated successfully with new week columns and unique date handling.")
     except Exception as e:
         print(f"❌ DB ERROR: {e}")
 
