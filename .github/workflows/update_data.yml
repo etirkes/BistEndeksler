@@ -2,8 +2,6 @@ name: Update BIST Data
 
 on:
   schedule:
-    # Hafta içi her gün (Pzt-Cum) TR Saatiyle 16:30 (UTC 13:30)
-    - cron: '30 13 * * 1-5'
     # Hafta içi her gün (Pzt-Cum) TR Saatiyle 19:00 (UTC 16:00)
     - cron: '0 16 * * 1-5'
   
