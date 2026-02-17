@@ -81,15 +81,15 @@ CONSTITUENTS = {
     # --- ANA ENDEKSLER ---
     'XU030.IS': [
         'AKBNK.IS', 'ALARK.IS', 'ARCLK.IS', 'ASELS.IS', 'ASTOR.IS', 'BIMAS.IS', 'BRSAN.IS', 'EKGYO.IS', 'ENKAI.IS', 'EREGL.IS',
-        'FROTO.IS', 'GARAN.IS', 'GUBRF.IS', 'HEKTS.IS', 'ISCTR.IS', 'KCHOL.IS', 'KONTR.IS', 'KOZAL.IS', 'KRDMD.IS', 'ODAS.IS',
+        'FROTO.IS', 'GARAN.IS', 'GUBRF.IS', 'HEKTS.IS', 'ISCTR.IS', 'KCHOL.IS', 'KONTR.IS', 'TRALT.IS', 'KRDMD.IS', 'ODAS.IS',
         'OYAKC.IS', 'PGSUS.IS', 'SAHOL.IS', 'SASA.IS', 'SISE.IS', 'TCELL.IS', 'THYAO.IS', 'TOASO.IS', 'TUPRS.IS', 'YKBNK.IS'
     ],
     'XU050.IS': [
         'AKBNK.IS', 'ALARK.IS', 'ARCLK.IS', 'ASELS.IS', 'ASTOR.IS', 'BIMAS.IS', 'BRSAN.IS', 'EKGYO.IS', 'ENKAI.IS', 'EREGL.IS',
-        'FROTO.IS', 'GARAN.IS', 'GUBRF.IS', 'HEKTS.IS', 'ISCTR.IS', 'KCHOL.IS', 'KONTR.IS', 'KOZAL.IS', 'KRDMD.IS', 'ODAS.IS',
+        'FROTO.IS', 'GARAN.IS', 'GUBRF.IS', 'HEKTS.IS', 'ISCTR.IS', 'KCHOL.IS', 'KONTR.IS', 'TRALT.IS', 'KRDMD.IS', 'ODAS.IS',
         'OYAKC.IS', 'PGSUS.IS', 'SAHOL.IS', 'SASA.IS', 'SISE.IS', 'TCELL.IS', 'THYAO.IS', 'TOASO.IS', 'TUPRS.IS', 'YKBNK.IS',
         'AEFES.IS', 'AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALFAS.IS', 'BERA.IS', 'CANTE.IS', 'CCOLA.IS', 'CIMSA.IS', 'DOHOL.IS',
-        'EGEEN.IS', 'ENJSA.IS', 'EUPWR.IS', 'GESAN.IS', 'HALKB.IS', 'ISGYO.IS', 'KOZAA.IS', 'MGROS.IS', 'SMRTG.IS', 'SOKM.IS',
+        'EGEEN.IS', 'ENJSA.IS', 'EUPWR.IS', 'GESAN.IS', 'HALKB.IS', 'ISGYO.IS', 'TRMET.IS', 'MGROS.IS', 'SMRTG.IS', 'SOKM.IS',
         'TTKOM.IS', 'ULKER.IS', 'VAKBN.IS', 'VESTL.IS'
     ],
     'XU100.IS': [
@@ -97,8 +97,8 @@ CONSTITUENTS = {
         'BERA.IS', 'BIMAS.IS', 'BIOEN.IS', 'BRSAN.IS', 'BRYAT.IS', 'BUCIM.IS', 'CANTE.IS', 'CCOLA.IS', 'CEMTS.IS', 'CIMSA.IS',
         'CWENE.IS', 'DOAS.IS', 'DOHOL.IS', 'ECILC.IS', 'ECZYT.IS', 'EGEEN.IS', 'EKGYO.IS', 'ENJSA.IS', 'ENKAI.IS', 'EREGL.IS',
         'EUPWR.IS', 'EUREN.IS', 'FROTO.IS', 'GARAN.IS', 'GENIL.IS', 'GESAN.IS', 'GLYHO.IS', 'GSDHO.IS', 'GUBRF.IS', 'HALKB.IS',
-        'HEKTS.IS', 'IMASM.IS', 'IPEKE.IS', 'ISCTR.IS', 'ISDMR.IS', 'ISGYO.IS', 'ISMEN.IS', 'IZMDC.IS', 'KARSN.IS', 'KAYSE.IS',
-        'KCAER.IS', 'KCHOL.IS', 'KONTR.IS', 'KONYA.IS', 'KOZAA.IS', 'KOZAL.IS', 'KRDMD.IS', 'KZBGY.IS', 'MAVI.IS', 'MGROS.IS',
+        'HEKTS.IS', 'IMASM.IS', 'TRENH.IS', 'ISCTR.IS', 'ISDMR.IS', 'ISGYO.IS', 'ISMEN.IS', 'IZMDC.IS', 'KARSN.IS', 'KAYSE.IS',
+        'KCAER.IS', 'KCHOL.IS', 'KONTR.IS', 'KONYA.IS', 'TRMET.IS', 'TRALT.IS', 'KRDMD.IS', 'KZBGY.IS', 'MAVI.IS', 'MGROS.IS',
         'MIATK.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PENTA.IS', 'PETKM.IS', 'PGSUS.IS', 'PSGYO.IS', 'QUAGR.IS', 'SAHOL.IS',
         'SASA.IS', 'SELEC.IS', 'SISE.IS', 'SKBNK.IS', 'SMRTG.IS', 'SNGYO.IS', 'SOKM.IS', 'TAVHL.IS', 'TCELL.IS', 'THYAO.IS',
         'TKFEN.IS', 'TOASO.IS', 'TSKB.IS', 'TTKOM.IS', 'TTRAK.IS', 'TUKAS.IS', 'TUPRS.IS', 'TURSG.IS', 'ULKER.IS', 'VAKBN.IS',
@@ -106,44 +106,44 @@ CONSTITUENTS = {
     ],
     
     # --- SEKTÖR ENDEKSLERİ ---
-    'XBANK.IS': ['AKBNK.IS', 'GARAN.IS', 'ISCTR.IS', 'YKBNK.IS', 'VAKBN.IS', 'HALKB.IS', 'TSKB.IS', 'ALBRK.IS', 'SKBNK.IS', 'ICBCT.IS', 'QNBFB.IS'],    
-    'XBLSM.IS': ['LOGO.IS', 'VBTYZ.IS', 'ARDYZ.IS', 'MIATK.IS', 'KFEIN.IS', 'FONET.IS', 'LINK.IS', 'PATEK.IS', 'OBSGK.IS', 'ATPTP.IS', 'HTTBT.IS', 'MTRKS.IS'],    
-    'XELKT.IS': ['ENJSA.IS', 'ZOREN.IS', 'ODAS.IS', 'AKSEN.IS', 'ASTOR.IS', 'GWIND.IS', 'BIOEN.IS', 'AYDEM.IS', 'CWENE.IS', 'EUPWR.IS', 'GESAN.IS', 'SMRTG.IS', 'YEOTK.IS', 'ALFAS.IS', 'MAGEN.IS', 'HUNER.IS'],    
-    'XFINK.IS': ['VAKFN.IS', 'GARFA.IS', 'ISFIN.IS', 'QNBFL.IS', 'LIDFA.IS'],    
-    'XGIDA.IS': ['CCOLA.IS', 'AEFES.IS', 'BIMAS.IS', 'MGROS.IS', 'ULKER.IS', 'SOKM.IS', 'TUKAS.IS', 'TATGD.IS', 'KERVT.IS', 'PETUN.IS', 'PINSU.IS', 'PNSUT.IS', 'KRVGD.IS', 'KAYSE.IS'],    
-    'XGMYO.IS': ['EKGYO.IS', 'ISGYO.IS', 'TRGYO.IS', 'AKFGY.IS', 'SNGYO.IS', 'KZBGY.IS', 'PSGYO.IS', 'HLGYO.IS', 'OZKGY.IS', 'RYGYO.IS', 'ALGYO.IS'],    
-    'XHOLD.IS': ['KCHOL.IS', 'SAHOL.IS', 'DOHOL.IS', 'AGHOL.IS', 'TEKTU.IS', 'GSDHO.IS', 'ALARK.IS', 'TKFEN.IS', 'GLYHO.IS', 'NTHOL.IS', 'BERA.IS', 'IEYHO.IS'],    
+    'XBANK.IS': ['AKBNK.IS', 'ALBRK.IS', 'GARAN.IS', 'HALKB.IS', 'ICBCT.IS', 'ISATR.IS', 'ISBTR.IS', 'ISCTR.IS', 'SKBNK.IS', 'TSKB.IS', 'VAKBN.IS', 'YKBNK.IS'],    
+    'XBLSM.IS': ['ALCTL.IS', 'ARDYZ.IS', 'ARENA.IS', 'ATATP.IS', 'AZTEK.IS', 'BINBN.IS', 'DESPC.IS', 'DGATE.IS', 'DOFRB.IS', 'EDATA.IS', 'ESCOM.IS', 'FONET.IS', 'FORTE.IS', 'HTTBT.IS', 'INDES.IS', 'INGRM.IS', 'KAREL.IS', 'KFEIN.IS', 'KRONT.IS', 'LINK.IS', 'LOGO.IS', 'MANAS.IS', 'MIATK.IS', 'MOBTL.IS', 'MTRKS.IS', 'NETAS.IS', 'NETCD.IS', 'OBASE.IS', 'ODINE.IS', 'PAPIL.IS', 'PATEK.IS', 'PENTA.IS', 'PKART.IS', 'REEDR.IS', 'SMART.IS', 'VBTYZ.IS'],    
+    'XELKT.IS': ['A1YEN.IS', 'AHGAZ.IS', 'AKENR.IS', 'AKFYE.IS', 'AKSEN.IS', 'AKSUE.IS', 'ALFAS.IS', 'ARASE.IS', 'ARFYE.IS', 'AYDEM.IS', 'AYEN.IS', 'BESTE.IS', 'BIGEN.IS', 'BIOEN.IS', 'CANTE.IS', 'CATES.IS', 'CONSE.IS', 'CWENE.IS', 'ECOGR.IS', 'ENDAE.IS', 'ENERY.IS', 'ENJSA.IS', 'ENTRA.IS', 'ESEN.IS', 'GWIND.IS', 'HUNER.IS', 'IZENR.IS', 'KLYPV.IS', 'LYDYE.IS', 'MAGEN.IS', 'MOGAN.IS', 'NATEN.IS', 'NTGAZ.IS', 'ODAS.IS', 'PAMEL.IS', 'SMRTG.IS', 'TATEN.IS', 'ZEDUR.IS', 'ZOREN.IS'],    
+    'XFINK.IS': ['CRDFA.IS', 'DSTKF.IS', 'GARFA.IS', 'ISFIN.IS', 'LIDFA.IS', 'SEKFK.IS', 'ULUFA.IS', 'VAKFA.IS', 'VAKFN.IS'],    
+    'XGIDA.IS': ['AEFES.IS', 'AKHAN.IS', 'ALKLC.IS', 'ARMGD.IS', 'ATAKP.IS', 'AVOD.IS', 'BALSU.IS', 'BANVT.IS', 'BESLR.IS', 'BORSK.IS', 'CCOLA.IS', 'CEMZY.IS', 'DARDL.IS', 'DMRGD.IS', 'DURKN.IS', 'EFOR.IS', 'EKSUN.IS', 'ELITE.IS', 'ERSU.IS', 'FADE.IS', 'FRIGO.IS', 'GOKNR.IS', 'GUNDG.IS', 'KAYSE.IS', 'KRSTL.IS', 'KRVGD.IS', 'KTSKR.IS', 'MERKO.IS', 'MEYSU.IS', 'OBAMS.IS', 'OFSYM.IS', 'ORCAY.IS', 'OYLUM.IS', 'PENGD.IS', 'PETUN.IS', 'PINSU.IS', 'PNSUT.IS', 'SEGMN.IS', 'SELVA.IS', 'SOKE.IS', 'TATGD.IS', 'TBORG.IS', 'TUKAS.IS', 'ULKER.IS', 'ULUUN.IS', 'VANGD.IS', 'YYLGD.IS'],    
+    'XGMYO.IS': ['ADGYO.IS', 'AGYO.IS', 'AHSGY.IS', 'AKFGY.IS', 'AKMGY.IS', 'AKSGY.IS', 'ALGYO.IS', 'ASGYO.IS', 'ATAGY.IS', 'AVGYO.IS', 'AVPGY.IS', 'BASGZ.IS', 'BEGYO.IS', 'DGGYO.IS', 'DZGYO.IS', 'EGEGY.IS', 'EKGYO.IS', 'EYGYO.IS', 'FZLGY.IS', 'HLGYO.IS', 'IDGYO.IS', 'ISGYO.IS', 'KGYO.IS', 'KLGYO.IS', 'KRGYO.IS', 'KZBGY.IS', 'KZGYO.IS', 'MHRGY.IS', 'MRGYO.IS', 'MSGYO.IS', 'NUGYO.IS', 'OZGYO.IS', 'OZKGY.IS', 'PAGYO.IS', 'PEKGY.IS', 'PSGYO.IS', 'RYGYO.IS', 'SEGYO.IS', 'SNGYO.IS', 'SRVGY.IS', 'SURGY.IS', 'TDGYO.IS', 'TRGYO.IS', 'TSGYO.IS', 'VKGYO.IS', 'VRGYO.IS', 'YGGYO.IS', 'ZERGY.IS', 'ZGYO.IS', 'ZRGYO.IS'],    
+    'XHOLD.IS': ['AGHOL.IS', 'AKYHO.IS', 'ALARK.IS', 'ARSAN.IS', 'AVHOL.IS', 'BERA.IS', 'BINHO.IS', 'BRYAT.IS', 'BULGS.IS', 'COSMO.IS', 'DENGE.IS', 'DERHL.IS', 'DOHOL.IS', 'DUNYH.IS', 'ECILC.IS', 'ECZYT.IS', 'GLRYH.IS', 'GLYHO.IS', 'GOZDE.IS', 'GRTHO.IS', 'GSDHO.IS', 'HDFGS.IS', 'HEDEF.IS', 'HUBVC.IS', 'ICUGS.IS', 'IEYHO.IS', 'IHLAS.IS', 'IHYAY.IS', 'INVEO.IS', 'INVES.IS', 'ISGSY.IS', 'KCHOL.IS', 'KLRHO.IS', 'LRSHO.IS', 'LYDHO.IS', 'MARKA.IS', 'METRO.IS', 'MZHLD.IS', 'NTHOL.IS', 'OSTIM.IS', 'OTTO.IS', 'PAHOL.IS', 'POLHO.IS', 'PRDGS.IS', 'RALYH.IS', 'SAHOL.IS', 'SISE.IS', 'TAVHL.IS', 'TEHOL.IS', 'TKFEN.IS', 'TRCAS.IS', 'TRHOL.IS', 'UFUK.IS', 'UNLU.IS', 'VERTU.IS', 'VERUS.IS', 'YESIL.IS'],    
     'XILTM.IS': ['TCELL.IS', 'TTKOM.IS'],    
-    'XINSA.IS': ['ENKAI.IS', 'TEKFEN.IS', 'ORGE.IS', 'YAYLA.IS'],    
-    'XKMYA.IS': ['SASA.IS', 'HEKTS.IS', 'PETKM.IS', 'TUPRS.IS', 'ALKIM.IS', 'BAGFS.IS', 'KORDS.IS', 'AKSA.IS', 'DYOBY.IS', 'MRSHL.IS', 'GUBRF.IS', 'EGGUB.IS', 'DEVA.IS'],    
-    'XMADN.IS': ['KOZAL.IS', 'KOZAA.IS', 'IPEKE.IS', 'PARSN.IS', 'CVKMD.IS'],    
-    'XMANA.IS': ['EREGL.IS', 'KRDMD.IS', 'ISDMR.IS', 'CEMTS.IS', 'KARDM.IS', 'KCAER.IS', 'IZMDC.IS', 'BOSSA.IS', 'BURCE.IS'],    
-    'XMESY.IS': ['FROTO.IS', 'TOASO.IS', 'TTRAK.IS', 'ARCLK.IS', 'VESBE.IS', 'VESTL.IS', 'OTKAR.IS', 'TUKAS.IS', 'JANTS.IS', 'KATMR.IS', 'TMSN.IS'],    
-    'XSGRT.IS': ['TURSG.IS', 'AKGRT.IS', 'ANSGR.IS', 'AGESA.IS', 'ANHYT.IS', 'RAYSG.IS'],    
+    'XINSA.IS': ['AKFIS.IS', 'ANELE.IS', 'BRLSM.IS', 'DAPGM.IS', 'EDIP.IS', 'ENKAI.IS', 'GESAN.IS', 'GLRMK.IS', 'KUYAS.IS', 'ORGE.IS', 'SANEL.IS', 'TURGG.IS', 'UCAYM.IS', 'YAYLA.IS', 'YYAPI.IS'],    
+    'XKMYA.IS': ['ACSEL.IS', 'AKSA.IS', 'ALKIM.IS', 'ANGEN.IS', 'AYGAZ.IS', 'BAGFS.IS', 'BAHKM.IS', 'BAYRK.IS', 'BRISA.IS', 'BRKSN.IS', 'DEVA.IS', 'DNISI.IS', 'DYOBY.IS', 'EGGUB.IS', 'EGPRO.IS', 'EPLAS.IS', 'EUREN.IS', 'FRMPL.IS', 'GEDZA.IS', 'GOODY.IS', 'GUBRF.IS', 'HEKTS.IS', 'ISKPL.IS', 'IZFAS.IS', 'KBORU.IS', 'KMPUR.IS', 'KOPOL.IS', 'KRPLS.IS', 'MARMR.IS', 'MEDTR.IS', 'MERCN.IS', 'MRSHL.IS', 'ONCSM.IS', 'OZRDN.IS', 'PETKM.IS', 'POLTK.IS', 'RNPOL.IS', 'RTALB.IS', 'SANFM.IS', 'SASA.IS', 'SEKUR.IS', 'SEYKM.IS', 'TARKM.IS', 'TMPOL.IS', 'TRILC.IS', 'TUPRS.IS'],    
+    'XMADN.IS': ['CVKMD.IS', 'PRKME.IS', 'RUZYE.IS', 'TRALT.IS', 'TRENJ.IS', 'TRMET.IS', 'VSNMD.IS'],    
+    'XMANA.IS': ['BLUME.IS', 'BMSCH.IS', 'BMSTL.IS', 'BRSAN.IS', 'BURCE.IS', 'BURVA.IS', 'CELHA.IS', 'CEMAS.IS', 'CEMTS.IS', 'CUSAN.IS', 'DMSAS.IS', 'DOFER.IS', 'DOKTA.IS', 'ERBOS.IS', 'ERCB.IS', 'EREGL.IS', 'ISDMR.IS', 'IZMDC.IS', 'KCAER.IS', 'KOCMT.IS', 'KRDMA.IS', 'KRDMB.IS', 'KRDMD.IS', 'MEGMT.IS', 'OZYSR.IS', 'PNLSN.IS', 'SARKY.IS', 'TCKRC.IS', 'TUCLK.IS', 'YKSLN.IS'],    
+    'XMESY.IS': ['ALCAR.IS', 'ALVES.IS', 'ARCLK.IS', 'ASTOR.IS', 'ASUZU.IS', 'BFREN.IS', 'BNTAS.IS', 'BVSAN.IS', 'DITAS.IS', 'EGEEN.IS', 'EKOS.IS', 'EMKEL.IS', 'EUPWR.IS', 'FMIZP.IS', 'FORMT.IS', 'FROTO.IS', 'GEREL.IS', 'HATSN.IS', 'HKTM.IS', 'IHEVA.IS', 'IMASM.IS', 'JANTS.IS', 'KARSN.IS', 'KATMR.IS', 'KLMSN.IS', 'MAKIM.IS', 'MAKTK.IS', 'MEKAG.IS', 'OTKAR.IS', 'OZATD.IS', 'PARSN.IS', 'PRKAB.IS', 'SAFKR.IS', 'SAYAS.IS', 'SILVR.IS', 'SNICA.IS', 'TMSN.IS', 'TOASO.IS', 'TTRAK.IS', 'ULUSE.IS', 'VESBE.IS', 'VESTL.IS', 'YIGIT.IS'],    
+    'XSGRT.IS': ['AGESA.IS', 'AKGRT.IS', 'ANHYT.IS', 'ANSGR.IS', 'RAYSG.IS', 'TURSG.IS'],    
     'XSPOR.IS': ['BJKAS.IS', 'FENER.IS', 'GSRAY.IS', 'TSPOR.IS'],    
-    'XTAST.IS': ['CIMSA.IS', 'AKCNS.IS', 'OYAKC.IS', 'NUHCM.IS', 'BUCIM.IS', 'AFYON.IS', 'GOLTS.IS', 'KONYA.IS', 'BTCIM.IS', 'BSOKE.IS'],    
-    'XTCRT.IS': ['BIMAS.IS', 'MGROS.IS', 'SOKM.IS', 'MAVI.IS', 'VAKKO.IS'],    
-    'XTEKS.IS': ['MAVI.IS', 'VAKKO.IS', 'YUNSA.IS', 'KORDS.IS', 'MNDRS.IS', 'SKTAS.IS', 'ARSAN.IS'],   
-    'XTRZM.IS': ['MAALT.IS', 'TEKTU.IS', 'AYCES.IS', 'DOCO.IS', 'TLMAN.IS', 'METUR.IS'],    
-    'XULAS.IS': ['THYAO.IS', 'PGSUS.IS', 'TAVHL.IS', 'CLEBI.IS', 'DOCO.IS', 'RYSAS.IS', 'TLMAN.IS', 'GSDDE.IS'],    
-    'XUSIN.IS': ['EREGL.IS', 'TUPRS.IS', 'SAHOL.IS', 'SISE.IS', 'KCHOL.IS', 'FROTO.IS', 'TOASO.IS', 'ARCLK.IS', 'ASELS.IS', 'PETKM.IS', 'SASA.IS', 'HEKTS.IS', 'ENKAI.IS', 'CCOLA.IS', 'AEFES.IS'],    
-    'XUTEK.IS': ['ASELS.IS', 'LOGO.IS', 'MIATK.IS', 'REEDR.IS', 'VBTYZ.IS', 'KFEIN.IS', 'SDTTR.IS', 'PATEK.IS', 'ALVES.IS', 'KAREL.IS', 'NETAS.IS', 'ESCOM.IS', 'ALCTL.IS', 'FONET.IS', 'KRONT.IS', 'LINK.IS', 'PKART.IS'],   
+    'XTAST.IS': ['AFYON.IS', 'AKCNS.IS', 'BIENY.IS', 'BOBET.IS', 'BSOKE.IS', 'BTCIM.IS', 'BUCIM.IS', 'CGCAM.IS', 'CIMSA.IS', 'CMBTN.IS', 'DOGUB.IS', 'EGSER.IS', 'GOLTS.IS', 'KLKIM.IS', 'KLSER.IS', 'KONYA.IS', 'KUTPO.IS', 'LMKDC.IS', 'MARBL.IS', 'NIBAS.IS', 'NUHCM.IS', 'OYAKC.IS', 'QUAGR.IS', 'SERNT.IS', 'USAK.IS'],    
+    'XTCRT.IS': ['ARZUM.IS', 'BIMAS.IS', 'BIZIM.IS', 'CRFSA.IS', 'DCTTR.IS', 'DOAS.IS', 'EBEBK.IS', 'GENIL.IS', 'GMTAS.IS', 'INTEM.IS', 'KIMMR.IS', 'KOTON.IS', 'MAVI.IS', 'MEPET.IS', 'MGROS.IS', 'MOPAS.IS', 'PSDTC.IS', 'SANKO.IS', 'SELEC.IS', 'SOKM.IS', 'SUWEN.IS', 'TGSAS.IS', 'TKNSA.IS', 'VAKKO.IS'],    
+    'XTEKS.IS': ['ARTMS.IS', 'BLCYT.IS', 'BOSSA.IS', 'DAGI.IS', 'DERIM.IS', 'DESA.IS', 'ENSRI.IS', 'HATEK.IS', 'ISSEN.IS', 'KORDS.IS'],   
+    'XTRZM.IS': ['AVTUR.IS', 'AYCES.IS', 'BIGCH.IS', 'BYDNR.IS', 'DOCO.IS', 'ETILR.IS', 'MAALT.IS', 'MARTI.IS', 'MERIT.IS', 'PKENT.IS', 'TABGD.IS', 'TEKTU.IS', 'ULAS.IS'],    
+    'XULAS.IS': ['BEYAZ.IS', 'CLEBI.IS', 'GRSEL.IS', 'GSDDE.IS', 'HOROZ.IS', 'HRKET.IS', 'PASEU.IS', 'PGSUS.IS', 'RYSAS.IS', 'THYAO.IS', 'TLMAN.IS', 'TUREX.IS'],    
+    'XUSIN.IS': ['ACSEL.IS', 'ADEL.IS', 'AEFES.IS', 'AFYON.IS', 'AGROT.IS', 'AKCNS.IS', 'AKHAN.IS', 'AKSA.IS', 'ALCAR.IS', 'ALKA.IS', 'ALKIM.IS', 'ALKLC.IS', 'ALVES.IS', 'ANGEN.IS', 'ARCLK.IS', 'ARMGD.IS', 'ARTMS.IS', 'ASTOR.IS', 'ASUZU.IS', 'ATAKP.IS', 'AVOD.IS', 'AYGAZ.IS', 'BAGFS.IS', 'BAHKM.IS', 'BAKAB.IS', 'BALSU.IS', 'BANVT.IS', 'BARMA.IS', 'BAYRK.IS', 'BESLR.IS', 'BFREN.IS', 'BIENY.IS', 'BLCYT.IS', 'BLUME.IS', 'BMSCH.IS', 'BMSTL.IS', 'BNTAS.IS', 'BOBET.IS', 'BORSK.IS', 'BOSSA.IS', 'BRISA.IS', 'BRKSN.IS', 'BRSAN.IS', 'BSOKE.IS', 'BTCIM.IS', 'BUCIM.IS', 'BURCE.IS', 'BURVA.IS', 'BVSAN.IS', 'CCOLA.IS', 'CELHA.IS', 'CEMAS.IS', 'CEMTS.IS', 'CEMZY.IS', 'CGCAM.IS', 'CIMSA.IS', 'CMBTN.IS', 'CUSAN.IS', 'CVKMD.IS', 'DAGI.IS', 'DARDL.IS', 'DERIM.IS', 'DESA.IS', 'DEVA.IS', 'DGNMO.IS', 'DITAS.IS', 'DMRGD.IS', 'DMSAS.IS', 'DNISI.IS', 'DOFER.IS', 'DOGUB.IS', 'DOKTA.IS', 'DURDO.IS', 'DURKN.IS', 'DYOBY.IS', 'EFOR.IS', 'EGEEN.IS', 'EGGUB.IS', 'EGPRO.IS', 'EGSER.IS', 'EKOS.IS', 'EKSUN.IS', 'ELITE.IS', 'EMKEL.IS', 'ENSRI.IS', 'EPLAS.IS', 'ERBOS.IS', 'ERCB.IS', 'EREGL.IS', 'ERSU.IS', 'EUPWR.IS', 'EUREN.IS', 'FADE.IS', 'FMIZP.IS', 'FORMT.IS', 'FRIGO.IS', 'FRMPL.IS', 'FROTO.IS', 'GEDZA.IS', 'GENTS.IS', 'GEREL.IS', 'GIPTA.IS', 'GOKNR.IS', 'GOLTS.IS', 'GOODY.IS', 'GUBRF.IS', 'GUNDG.IS', 'HATEK.IS', 'HATSN.IS', 'HEKTS.IS', 'HKTM.IS', 'IHEVA.IS', 'IMASM.IS', 'ISDMR.IS', 'ISKPL.IS', 'ISSEN.IS', 'IZFAS.IS', 'IZINV.IS', 'IZMDC.IS', 'JANTS.IS', 'KAPLM.IS', 'KARSN.IS', 'KARTN.IS', 'KATMR.IS', 'KAYSE.IS', 'KBORU.IS', 'KCAER.IS', 'KLKIM.IS', 'KLMSN.IS', 'KLSER.IS', 'KLSYN.IS', 'KMPUR.IS', 'KNFRT.IS', 'KOCMT.IS', 'KONKA.IS', 'KONYA.IS', 'KOPOL.IS', 'KORDS.IS', 'KRDMA.IS', 'KRDMB.IS', 'KRDMD.IS', 'KRPLS.IS', 'KRSTL.IS', 'KRTEK.IS', 'KRVGD.IS', 'KTSKR.IS', 'KUTPO.IS', 'LILAK.IS', 'LMKDC.IS', 'LUKSK.IS', 'MAKIM.IS', 'MAKTK.IS', 'MARBL.IS', 'MARMR.IS', 'MEDTR.IS', 'MEGMT.IS', 'MEKAG.IS', 'MERCN.IS', 'MERKO.IS', 'MEYSU.IS', 'MNDRS.IS', 'MNDTR.IS', 'MRSHL.IS', 'NIBAS.IS', 'NUHCM.IS', 'OBAMS.IS', 'OFSYM.IS', 'ONCSM.IS', 'ORCAY.IS', 'OTKAR.IS', 'OYAKC.IS', 'OYLUM.IS', 'OZATD.IS', 'OZRDN.IS', 'OZSUB.IS', 'OZYSR.IS', 'PARSN.IS', 'PENGD.IS', 'PETKM.IS', 'PETUN.IS', 'PINSU.IS', 'PNLSN.IS', 'PNSUT.IS', 'POLTK.IS', 'PRKAB.IS', 'PRKME.IS', 'PRZMA.IS', 'QUAGR.IS', 'RNPOL.IS', 'RODRG.IS', 'RTALB.IS', 'RUBNS.IS', 'RUZYE.IS', 'SAFKR.IS', 'SAMAT.IS', 'SANFM.IS', 'SARKY.IS', 'SASA.IS', 'SAYAS.IS', 'SEGMN.IS', 'SEKUR.IS', 'SELVA.IS', 'SERNT.IS', 'SEYKM.IS', 'SILVR.IS', 'SKTAS.IS', 'SNICA.IS', 'SOKE.IS', 'SUNTK.IS', 'TARKM.IS', 'TATGD.IS', 'TBORG.IS', 'TCKRC.IS', 'TEZOL.IS', 'TMPOL.IS', 'TMSN.IS', 'TOASO.IS', 'TRALT.IS', 'TRENJ.IS', 'TRILC.IS', 'TRMET.IS', 'TTRAK.IS', 'TUCLK.IS', 'TUKAS.IS', 'TUPRS.IS', 'ULKER.IS', 'ULUSE.IS', 'ULUUN.IS', 'USAK.IS', 'VANGD.IS', 'VESBE.IS', 'VESTL.IS', 'VKING.IS', 'VSNMD.IS', 'YAPRK.IS', 'YATAS.IS', 'YIGIT.IS', 'YKSLN.IS', 'YUNSA.IS', 'YYLGD.IS'],    
+    'XUTEK.IS': ['ALCTL.IS', 'ALTNY.IS', 'ARDYZ.IS', 'ARENA.IS', 'ASELS.IS', 'ATATP.IS', 'AZTEK.IS', 'BINBN.IS', 'DESPC.IS', 'DGATE.IS', 'DOFRB.IS', 'EDATA.IS', 'ESCOM.IS', 'FONET.IS', 'FORTE.IS', 'HTTBT.IS', 'INDES.IS', 'INGRM.IS', 'KAREL.IS', 'KFEIN.IS', 'KRONT.IS', 'LINK.IS', 'LOGO.IS', 'MANAS.IS', 'MIATK.IS', 'MOBTL.IS', 'MTRKS.IS', 'NETAS.IS', 'NETCD.IS', 'OBASE.IS', 'ODINE.IS', 'ONRYT.IS', 'PAPIL.IS', 'PATEK.IS', 'PENTA.IS', 'PKART.IS', 'REEDR.IS', 'SDTTR.IS', 'SMART.IS', 'VBTYZ.IS'],   
     'XAKUR.IS': ['A1CAP.IS', 'GEDIK.IS', 'GLBMD.IS', 'INFO.IS', 'ISMEN.IS', 'OSMEN.IS', 'OYYAT.IS', 'SKYMD.IS', 'TERA.IS'],
     'XLBNK.IS': ['AKBNK.IS', 'GARAN.IS', 'HALKB.IS', 'ISCTR.IS', 'VAKBN.IS', 'YKBNK.IS'],
-    'X10XB.IS': ['ASELS.IS', 'BIMAS.IS', 'EKGYO.IS', 'EREGL.IS', 'KCHOL.IS', 'PGSUS.IS', 'SASA.IS', 'TCELL.IS', 'TUPRS.IS', 'THYAO.IS'],
-    'XSD25.IS': ['AKBNK.IS', 'AEFES.IS', 'ARCLK.IS', 'ASELS.IS', 'BIMAS.IS', 'CIMSA.IS', 'DOAS.IS', 'ENKAI.IS', 'FROTO.IS', 'SAHOL.IS', 'KCHOL.IS', 'MAVI.IS', 'MGROS.IS', 'OYAKC.IS', 'PGSUS.IS', 'PETKM.IS', 'TAVHL.IS', 'TCELL.IS', 'TUPRS.IS', 'THYAO.IS', 'GARAN.IS', 'ISCTR.IS', 'TSKB.IS', 'SISE.IS', 'ULKER.IS'],
-    'XUHIZ.IS': ['A1YEN.IS', 'ADESE.IS', 'AHGAZ.IS', 'AKENR.IS', 'AKFIS.IS', 'AKFYE.IS', 'AKSEN.IS', 'AKSUE.IS', 'ALFAS.IS', 'AYCES.IS', 'ANELE.IS', 'ARFYE.IS', 'ARZUM.IS', 'AVTUR.IS', 'AYDEM.IS', 'AYEN.IS', 'BYDNR.IS', 'BJKAS.IS', 'BEYAZ.IS', 'BIGTK.IS', 'BIMAS.IS', 'BIOEN.IS', 'BIGEN.IS', 'BRLSM.IS', 'BIZIM.IS', 'BORLS.IS', 'BIGCH.IS', 'CRFSA.IS', 'CEOEM.IS', 'CONSE.IS', 'CWENE.IS', 'CANTE.IS', 'CATES.IS', 'CLEBI.IS', 'DAPGM.IS', 'DCTTR.IS', 'DOCO.IS', 'ARASE.IS', 'DOAS.IS', 'EBEBK.IS', 'ECOGR.IS', 'EDIP.IS', 'ENDAE.IS', 'ENJSA.IS', 'ENERY.IS', 'ENKAI.IS', 'KIMMR.IS', 'ESCAR.IS', 'ESEN.IS', 'ETILR.IS', 'FENER.IS', 'FLAP.IS', 'GSRAY.IS', 'GWIND.IS', 'GENIL.IS', 'GZNMI.IS', 'GMTAS.IS', 'GESAN.IS', 'GSDDE.IS', 'GLRMK.IS', 'GRSEL.IS', 'HRKET.IS', 'HOROZ.IS', 'HUNER.IS', 'HURGZ.IS', 'ENTRA.IS', 'IHLGM.IS', 'IHGZT.IS', 'IHAAS.IS', 'INTEM.IS', 'IZENR.IS', 'KLYPV.IS', 'KONTR.IS', 'KOTON.IS', 'KUYAS.IS', 'LIDER.IS', 'LKMNH.IS', 'LYDYE.IS', 'MACKO.IS', 'MAGEN.IS', 'MAALT.IS', 'MARTI.IS', 'MAVI.IS', 'MEPET.IS', 'MERIT.IS', 'MGROS.IS', 'MPARK.IS', 'MOGAN.IS', 'MOPAS.IS', 'EGEPO.IS', 'NTGAZ.IS', 'NATEN.IS', 'ODAS.IS', 'ORGE.IS', 'PAMEL.IS', 'PASEU.IS', 'PCILT.IS', 'PGSUS.IS', 'PSDTC.IS', 'PKENT.IS', 'PLTUR.IS', 'RYSAS.IS', 'RGYAS.IS', 'SANEL.IS', 'SANKO.IS', 'SELEC.IS', 'SKYLP.IS', 'SMRTG.IS', 'SONME.IS', 'SUWEN.IS', 'SOKM.IS', 'TABGD.IS', 'TNZTP.IS', 'TATEN.IS', 'TEKTU.IS', 'TKNSA.IS', 'TGSAS.IS', 'TLMAN.IS', 'TSPOR.IS', 'TUREX.IS', 'TCELL.IS', 'TURGG.IS', 'THYAO.IS', 'TTKOM.IS', 'ULAS.IS', 'UCAYM.IS', 'VAKKO.IS', 'YAYLA.IS', 'YEOTK.IS', 'YYAPI.IS', 'ZEDUR.IS', 'ZOREN.IS'],
-    'XYORT.IS': ['ATLAS.IS', 'EUKYO.IS', 'EUYO.IS', 'ETYAT.IS', 'GRNYO.IS', 'ISYAT.IS', 'MTRYO.IS', 'OYAYO.IS', 'VKFYO.IS'],
-    'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BTCIM.IS', 'BSOKE.IS', 'BRSAN.IS', 'BRYAT.IS', 'CCOLA.IS', 'CWENE.IS', 'CANTE.IS', 'CIMSA.IS', 'DAPGM.IS', 'DOHOL.IS', 'DOAS.IS', 'EFOR.IS', 'EGEEN.IS', 'ECILC.IS', 'ENJSA.IS', 'ENERY.IS', 'EUPWR.IS', 'FENER.IS', 'GSRAY.IS', 'GENIL.IS', 'GESAN.IS', 'GRTHO.IS', 'GLRMK.IS', 'GRSEL.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KTLEV.IS', 'KLRHO.IS', 'KCAER.IS', 'KONTR.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TSPOR.IS', 'TRMET.IS', 'TRENJ.IS', 'TUKAS.IS', 'TUREX.IS', 'HALKB.IS', 'TSKB.IS', 'TURSG.IS', 'VAKBN.IS', 'TTRAK.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
+    'X10XB.IS': ['ASELS.IS', 'BIMAS.IS', 'EKGYO.IS', 'EREGL.IS', 'KCHOL.IS', 'PGSUS.IS', 'SASA.IS', 'TCELL.IS', 'THYAO.IS', 'TUPRS.IS'],
+    'XSD25.IS': ['AEFES.IS', 'AKBNK.IS', 'ARCLK.IS', 'ASELS.IS', 'BIMAS.IS', 'CIMSA.IS', 'DOAS.IS', 'ENKAI.IS', 'FROTO.IS', 'GARAN.IS', 'ISCTR.IS', 'KCHOL.IS', 'MAVI.IS', 'MGROS.IS', 'OYAKC.IS', 'PETKM.IS', 'PGSUS.IS', 'SAHOL.IS', 'SISE.IS', 'TAVHL.IS', 'TCELL.IS', 'THYAO.IS', 'TSKB.IS', 'TUPRS.IS', 'ULKER.IS'],
+    'XUHIZ.IS': ['A1YEN.IS', 'ADESE.IS', 'AHGAZ.IS', 'AKENR.IS', 'AKFIS.IS', 'AKFYE.IS', 'AKSEN.IS', 'AKSUE.IS', 'ALFAS.IS', 'ANELE.IS', 'ARASE.IS', 'ARFYE.IS', 'ARZUM.IS', 'AVTUR.IS', 'AYCES.IS', 'AYDEM.IS', 'AYEN.IS', 'BESTE.IS', 'BEYAZ.IS', 'BIGCH.IS', 'BIGEN.IS', 'BIGTK.IS', 'BIMAS.IS', 'BIOEN.IS', 'BIZIM.IS', 'BJKAS.IS', 'BORLS.IS', 'BRLSM.IS', 'BYDNR.IS', 'CANTE.IS', 'CATES.IS', 'CEOEM.IS', 'CLEBI.IS', 'CONSE.IS', 'CRFSA.IS', 'CWENE.IS', 'DAPGM.IS', 'DCTTR.IS', 'DOAS.IS', 'DOCO.IS', 'EBEBK.IS', 'ECOGR.IS', 'EDIP.IS', 'EGEPO.IS', 'ENDAE.IS', 'ENERY.IS', 'ENJSA.IS', 'ENKAI.IS', 'ENTRA.IS', 'ESCAR.IS', 'ESEN.IS', 'ETILR.IS', 'FENER.IS', 'FLAP.IS', 'GENIL.IS', 'GESAN.IS', 'GLRMK.IS', 'GMTAS.IS', 'GRSEL.IS', 'GSDDE.IS', 'GSRAY.IS', 'GWIND.IS', 'GZNMI.IS', 'HOROZ.IS', 'HRKET.IS', 'HUNER.IS', 'HURGZ.IS', 'IHAAS.IS', 'IHGZT.IS', 'IHLGM.IS', 'INTEM.IS', 'IZENR.IS', 'KIMMR.IS', 'KLYPV.IS', 'KONTR.IS', 'KOTON.IS', 'KUYAS.IS', 'LIDER.IS', 'LKMNH.IS', 'LYDYE.IS', 'MAALT.IS', 'MACKO.IS', 'MAGEN.IS', 'MARTI.IS', 'MAVI.IS', 'MEPET.IS', 'MERIT.IS', 'MGROS.IS', 'MOGAN.IS', 'MOPAS.IS', 'MPARK.IS', 'NATEN.IS', 'NTGAZ.IS', 'ODAS.IS', 'ORGE.IS', 'PAMEL.IS', 'PASEU.IS', 'PCILT.IS', 'PGSUS.IS', 'PKENT.IS', 'PLTUR.IS', 'PSDTC.IS', 'RGYAS.IS', 'RYSAS.IS', 'SANEL.IS', 'SANKO.IS', 'SELEC.IS', 'SKYLP.IS', 'SMRTG.IS', 'SOKM.IS', 'SONME.IS', 'SUWEN.IS', 'TABGD.IS', 'TATEN.IS', 'TCELL.IS', 'TEKTU.IS', 'TGSAS.IS', 'THYAO.IS', 'TKNSA.IS', 'TLMAN.IS', 'TNZTP.IS', 'TSPOR.IS', 'TTKOM.IS', 'TUREX.IS', 'TURGG.IS', 'UCAYM.IS', 'ULAS.IS', 'VAKKO.IS', 'YAYLA.IS', 'YEOTK.IS', 'YYAPI.IS', 'ZEDUR.IS', 'ZOREN.IS'],
+    'XYORT.IS': ['ATLAS.IS', 'ETYAT.IS', 'EUKYO.IS', 'EUYO.IS', 'GRNYO.IS', 'ISYAT.IS', 'MTRYO.IS', 'OYAYO.IS', 'VKFYO.IS'],
+    'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BRSAN.IS', 'BRYAT.IS', 'BSOKE.IS', 'BTCIM.IS', 'CANTE.IS', 'CCOLA.IS', 'CIMSA.IS', 'CWENE.IS', 'DAPGM.IS', 'DOAS.IS', 'DOHOL.IS', 'ECILC.IS', 'EFOR.IS', 'EGEEN.IS', 'ENERY.IS', 'ENJSA.IS', 'EUPWR.IS', 'FENER.IS', 'GENIL.IS', 'GESAN.IS', 'GLRMK.IS', 'GRSEL.IS', 'GRTHO.IS', 'GSRAY.IS', 'HALKB.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KCAER.IS', 'KLRHO.IS', 'KONTR.IS', 'KTLEV.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TRENJ.IS', 'TRMET.IS', 'TSKB.IS', 'TSPOR.IS', 'TTRAK.IS', 'TUKAS.IS', 'TUREX.IS', 'TURSG.IS', 'VAKBN.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
 }
 
-def get_db_price(symbol, target_date):
+def get_db_price(symbol, target_date, table_name='bist_index_history'):
     """
     Veritabanından belirli bir tarihteki fiyatı çeker.
     Eğer o tarihte yoksa, None döner.
     """
     try:
-        response = supabase.table('bist_index_history') \
+        response = supabase.table(table_name) \
             .select('close') \
             .eq('symbol', symbol) \
             .eq('date', target_date.strftime('%Y-%m-%d')) \
@@ -153,10 +153,10 @@ def get_db_price(symbol, target_date):
             return float(response.data[0]['close'])
         return None
     except Exception as e:
-        print(f"DB Read Error for {symbol} on {target_date}: {e}")
+        print(f"DB Read Error for {symbol} in {table_name} on {target_date}: {e}")
         return None
 
-def upsert_price(symbol, price, date):
+def upsert_price(symbol, price, date, table_name='bist_index_history'):
     """
     Günlük kapanış fiyatını veritabanına kaydeder/günceller.
     """
@@ -166,9 +166,9 @@ def upsert_price(symbol, price, date):
             'date': date.strftime('%Y-%m-%d'),
             'close': price
         }
-        supabase.table('bist_index_history').upsert(data).execute()
+        supabase.table(table_name).upsert(data).execute()
     except Exception as e:
-        print(f"DB Upsert Error for {symbol}: {e}")
+        print(f"DB Upsert Error for {symbol} in {table_name}: {e}")
 
 def get_last_friday(today):
     """
@@ -206,7 +206,7 @@ def get_previous_trading_day(today):
     
     return today - timedelta(days=days_back)
 
-def fetch_and_calculate(symbol, clean_sym):
+def fetch_and_calculate(symbol, clean_sym, history_table='bist_index_history'):
     try:
         ticker = yf.Ticker(symbol)
         # Sadece son fiyatı anlık alalım
@@ -221,16 +221,16 @@ def fetch_and_calculate(symbol, clean_sym):
         now = datetime.now()
         
         # 1. Bugünü Veritabanına Kaydet
-        upsert_price(symbol, current_price, now)
+        upsert_price(symbol, current_price, now, history_table)
         
         # 2. Geçmiş Verileri Veritabanından Çek
         # Günlük Değişim için Dün
         yesterday = get_previous_trading_day(now)
-        price_yesterday = get_db_price(clean_sym, yesterday)
+        price_yesterday = get_db_price(clean_sym, yesterday, history_table)
         
         # Haftalık Değişim için Geçen Cuma
         last_friday = get_last_friday(now)
-        price_last_friday = get_db_price(clean_sym, last_friday)
+        price_last_friday = get_db_price(clean_sym, last_friday, history_table)
 
         # Hesaplamalar
         change_1d = 0
@@ -254,64 +254,7 @@ def fetch_and_calculate(symbol, clean_sym):
         print(f"Error for {symbol}: {e}")
         return None
 
-def fetch_with_retry(symbol):
-    """
-    Hisseler için standart Yahoo verisi çeker (Eski Yöntem).
-    """
-    try:
-        ticker = yf.Ticker(symbol)
-        periods = ["1y", "1mo", "5d", "1d"]
-        hist = None
-        
-        for p in periods:
-            hist = ticker.history(period=p)
-            if not hist.empty and len(hist) >= 1:
-                break
 
-        if hist is None or hist.empty:
-            return None
-            
-        if hasattr(hist.index, 'tz_localize'):
-            hist.index = hist.index.tz_localize(None)
-        
-        closes = hist['Close'].dropna()
-        if len(closes) < 1: return None
-
-        curr_price = float(closes.iloc[-1])
-        last_date = closes.index[-1]
-        
-        def get_p(days_back):
-            try:
-                if len(closes) < 2: return curr_price
-                target = last_date - timedelta(days=days_back)
-                idx = closes.index.asof(target)
-                return float(closes.loc[idx]) if not pd.isna(idx) else float(closes.iloc[0])
-            except:
-                return float(closes.iloc[0])
-
-        p1d = float(closes.iloc[-2]) if len(closes) >= 2 else curr_price
-        
-        p1w = get_p(7)
-        p1m = get_p(30)
-        p3m = get_p(90)
-
-        def pct(new, old):
-            if not old or old == 0 or new == old: return 0
-            return round(((new - old) / old) * 100, 2)
-
-        vol = float(hist['Volume'].iloc[-1]) if 'Volume' in hist.columns else 0
-
-        return {
-            'last_price': round(curr_price, 2),
-            'change_1d': pct(curr_price, p1d),
-            'change_1w': pct(curr_price, p1w),
-            'change_1m': pct(curr_price, p1m),
-            'change_3m': pct(curr_price, p3m),
-            'volume': f"{round(vol / 1_000_000, 1)}M"
-        }
-    except Exception as e:
-        print(f"Error fetching {symbol}: {e}")
-        return None
 
 def main():
     print(f"BIST Data Fetcher Started: {datetime.now()}")
@@ -324,7 +267,7 @@ def main():
     for symbol, info in INDICES.items():
         clean_sym = symbol.replace('.IS', '')
         # Manuel DB Hesaplaması
-        stats = fetch_and_calculate(symbol, clean_sym)
+        stats = fetch_and_calculate(symbol, clean_sym, history_table='bist_index_history')
         
         if stats:
             print(f"{clean_sym}: {stats['last_price']} (1D: {stats['change_1d']}%, 1W: {stats['change_1w']}%) [Ref: {stats['price_yesterday']}, {stats['price_last_friday']}]")
@@ -358,9 +301,11 @@ def main():
 
     print(f"Processing {len(unique_stocks)} stocks...")
     for i, symbol in enumerate(list(unique_stocks)):
-        stats = fetch_with_retry(symbol) 
+        clean_sym = symbol.replace('.IS', '')
+        # Hisseler için de artık veritabanı history kullanıyoruz!
+        stats = fetch_and_calculate(symbol, clean_sym, history_table='bist_price_history')
+        
         if stats:
-            clean_sym = symbol.replace('.IS', '')
             results_stocks.append({
                 'symbol': clean_sym,
                 'parent_index': ",".join(stock_to_parents.get(symbol, [])),
@@ -369,8 +314,8 @@ def main():
                 'change1w': stats['change_1w'],
                 'change2w': 0, 
                 'change3w': 0,
-                'change1m': stats['change_1m'],
-                'change3m': stats['change_3m'],
+                'change1m': 0, # Şimdilik geçmiş olmadığı için 0
+                'change3m': 0, # Şimdilik geçmiş olmadığı için 0
                 'updated_at': datetime.now().isoformat()
             })
         if i % 20 == 0: time.sleep(0.3)
