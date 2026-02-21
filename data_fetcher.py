@@ -134,7 +134,21 @@ CONSTITUENTS = {
     'XSD25.IS': ['AEFES.IS', 'AKBNK.IS', 'ARCLK.IS', 'ASELS.IS', 'BIMAS.IS', 'CIMSA.IS', 'DOAS.IS', 'ENKAI.IS', 'FROTO.IS', 'GARAN.IS', 'ISCTR.IS', 'KCHOL.IS', 'MAVI.IS', 'MGROS.IS', 'OYAKC.IS', 'PETKM.IS', 'PGSUS.IS', 'SAHOL.IS', 'SISE.IS', 'TAVHL.IS', 'TCELL.IS', 'THYAO.IS', 'TSKB.IS', 'TUPRS.IS', 'ULKER.IS'],
     'XUHIZ.IS': ['A1YEN.IS', 'ADESE.IS', 'AHGAZ.IS', 'AKENR.IS', 'AKFIS.IS', 'AKFYE.IS', 'AKSEN.IS', 'AKSUE.IS', 'ALFAS.IS', 'ANELE.IS', 'ARASE.IS', 'ARFYE.IS', 'ARZUM.IS', 'AVTUR.IS', 'AYCES.IS', 'AYDEM.IS', 'AYEN.IS', 'BESTE.IS', 'BEYAZ.IS', 'BIGCH.IS', 'BIGEN.IS', 'BIGTK.IS', 'BIMAS.IS', 'BIOEN.IS', 'BIZIM.IS', 'BJKAS.IS', 'BORLS.IS', 'BRLSM.IS', 'BYDNR.IS', 'CANTE.IS', 'CATES.IS', 'CEOEM.IS', 'CLEBI.IS', 'CONSE.IS', 'CRFSA.IS', 'CWENE.IS', 'DAPGM.IS', 'DCTTR.IS', 'DOAS.IS', 'DOCO.IS', 'EBEBK.IS', 'ECOGR.IS', 'EDIP.IS', 'EGEPO.IS', 'ENDAE.IS', 'ENERY.IS', 'ENJSA.IS', 'ENKAI.IS', 'ENTRA.IS', 'ESCAR.IS', 'ESEN.IS', 'ETILR.IS', 'FENER.IS', 'FLAP.IS', 'GENIL.IS', 'GESAN.IS', 'GLRMK.IS', 'GMTAS.IS', 'GRSEL.IS', 'GSDDE.IS', 'GSRAY.IS', 'GWIND.IS', 'GZNMI.IS', 'HOROZ.IS', 'HRKET.IS', 'HUNER.IS', 'HURGZ.IS', 'IHAAS.IS', 'IHGZT.IS', 'IHLGM.IS', 'INTEM.IS', 'IZENR.IS', 'KIMMR.IS', 'KLYPV.IS', 'KONTR.IS', 'KOTON.IS', 'KUYAS.IS', 'LIDER.IS', 'LKMNH.IS', 'LYDYE.IS', 'MAALT.IS', 'MACKO.IS', 'MAGEN.IS', 'MARTI.IS', 'MAVI.IS', 'MEPET.IS', 'MERIT.IS', 'MGROS.IS', 'MOGAN.IS', 'MOPAS.IS', 'MPARK.IS', 'NATEN.IS', 'NTGAZ.IS', 'ODAS.IS', 'ORGE.IS', 'PAMEL.IS', 'PASEU.IS', 'PCILT.IS', 'PGSUS.IS', 'PKENT.IS', 'PLTUR.IS', 'PSDTC.IS', 'RGYAS.IS', 'RYSAS.IS', 'SANEL.IS', 'SANKO.IS', 'SELEC.IS', 'SKYLP.IS', 'SMRTG.IS', 'SOKM.IS', 'SONME.IS', 'SUWEN.IS', 'TABGD.IS', 'TATEN.IS', 'TCELL.IS', 'TEKTU.IS', 'TGSAS.IS', 'THYAO.IS', 'TKNSA.IS', 'TLMAN.IS', 'TNZTP.IS', 'TSPOR.IS', 'TTKOM.IS', 'TUREX.IS', 'TURGG.IS', 'UCAYM.IS', 'ULAS.IS', 'VAKKO.IS', 'YAYLA.IS', 'YEOTK.IS', 'YYAPI.IS', 'ZEDUR.IS', 'ZOREN.IS'],
     'XYORT.IS': ['ATLAS.IS', 'ETYAT.IS', 'EUKYO.IS', 'EUYO.IS', 'GRNYO.IS', 'ISYAT.IS', 'MTRYO.IS', 'OYAYO.IS', 'VKFYO.IS'],
-    'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BRSAN.IS', 'BRYAT.IS', 'BSOKE.IS', 'BTCIM.IS', 'CANTE.IS', 'CCOLA.IS', 'CIMSA.IS', 'CWENE.IS', 'DAPGM.IS', 'DOAS.IS', 'DOHOL.IS', 'ECILC.IS', 'EFOR.IS', 'EGEEN.IS', 'ENERY.IS', 'ENJSA.IS', 'EUPWR.IS', 'FENER.IS', 'GENIL.IS', 'GESAN.IS', 'GLRMK.IS', 'GRSEL.IS', 'GRTHO.IS', 'GSRAY.IS', 'HALKB.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KCAER.IS', 'KLRHO.IS', 'KONTR.IS', 'KTLEV.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TRENJ.IS', 'TRMET.IS', 'TSKB.IS', 'TSPOR.IS', 'TTRAK.IS', 'TUKAS.IS', 'TUREX.IS', 'TURSG.IS', 'VAKBN.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS']
+    'XYUZO.IS': ['AGHOL.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALTNY.IS', 'ANSGR.IS', 'ARCLK.IS', 'BALSU.IS', 'BRSAN.IS', 'BRYAT.IS', 'BSOKE.IS', 'BTCIM.IS', 'CANTE.IS', 'CCOLA.IS', 'CIMSA.IS', 'CWENE.IS', 'DAPGM.IS', 'DOAS.IS', 'DOHOL.IS', 'ECILC.IS', 'EFOR.IS', 'EGEEN.IS', 'ENERY.IS', 'ENJSA.IS', 'EUPWR.IS', 'FENER.IS', 'GENIL.IS', 'GESAN.IS', 'GLRMK.IS', 'GRSEL.IS', 'GRTHO.IS', 'GSRAY.IS', 'HALKB.IS', 'HEKTS.IS', 'ISMEN.IS', 'IZENR.IS', 'KCAER.IS', 'KLRHO.IS', 'KONTR.IS', 'KTLEV.IS', 'KUYAS.IS', 'MAGEN.IS', 'MAVI.IS', 'MIATK.IS', 'MPARK.IS', 'OBAMS.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PASEU.IS', 'PATEK.IS', 'QUAGR.IS', 'RALYH.IS', 'REEDR.IS', 'SKBNK.IS', 'SOKM.IS', 'TABGD.IS', 'TKFEN.IS', 'TRENJ.IS', 'TRMET.IS', 'TSKB.IS', 'TSPOR.IS', 'TTRAK.IS', 'TUKAS.IS', 'TUREX.IS', 'TURSG.IS', 'VAKBN.IS', 'VESTL.IS', 'YEOTK.IS', 'ZOREN.IS'],
+    
+    # --- EKSİK ENDEKSLER (DOLDURULACAK) ---
+    'XU500.IS': [],
+    'XUTUM.IS': [],
+    'XHARZ.IS': [],
+    'XK030.IS': [],
+    'XKTMT.IS': [],
+    'XKTUM.IS': [],
+    'XTM25.IS': [],
+    'XTMTU.IS': [],
+    'XTUMY.IS': [],
+    'XUGRA.IS': [],
+    'XUMAL.IS': [],
+    'XYLDZ.IS': [],
 }
 
 def get_db_price(symbol, target_date, table_name='bist_index_history'):
@@ -190,6 +204,8 @@ def get_last_friday(today):
     days_back = (today.weekday() - 4) % 7
     if days_back == 0:
         days_back = 7 # Bugün Cuma ise geçen Cuma'yı al
+    elif today.weekday() >= 5: # Cumartesi veya Pazar ise
+        days_back += 7 # Geçen haftanın Cumasını al (bugünün/dünün Cumasını değil)
     
     return today - timedelta(days=days_back)
 
@@ -231,6 +247,28 @@ def fetch_and_calculate(symbol, clean_sym, history_table='bist_index_history'):
         # Haftalık Değişim için Geçen Cuma
         last_friday = get_last_friday(now)
         price_last_friday = get_db_price(clean_sym, last_friday, history_table)
+
+        # --- YALNIZCA HİSSELER İÇİN GEÇMİŞ VERİ DOLDURMA (FALLBACK) ---
+        if (price_yesterday is None or price_last_friday is None) and history_table == 'bist_price_history':
+            print(f"[{clean_sym}] DB'de eksik veri var, Yahoo Finance'den çekiliyor...")
+            hist_extra = ticker.history(period="1mo")
+            if not hist_extra.empty:
+                # Tarihleri karşılaştırabilmek için index'i date tipine çevirelim
+                hist_extra.index = hist_extra.index.date
+                
+                # Dün verisi eksikse doldur
+                y_date = yesterday.date()
+                if price_yesterday is None and y_date in hist_extra.index:
+                    price_yesterday = float(hist_extra.loc[y_date]['Close'])
+                    upsert_price(symbol, price_yesterday, yesterday, history_table)
+                    print(f"  - Dün ({y_date}) verisi Yahoo'dan çekildi ve kaydedildi.")
+                
+                # Geçen Cuma verisi eksikse doldur
+                f_date = last_friday.date()
+                if price_last_friday is None and f_date in hist_extra.index:
+                    price_last_friday = float(hist_extra.loc[f_date]['Close'])
+                    upsert_price(symbol, price_last_friday, last_friday, history_table)
+                    print(f"  - Geçen Cuma ({f_date}) verisi Yahoo'dan çekildi ve kaydedildi.")
 
         # Hesaplamalar
         change_1d = 0
