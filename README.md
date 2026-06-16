@@ -1,2 +1,2 @@
 # BistEndeksler
-Bist endeksler ve onalara ait hisseler
+Bist endeksler ve onalara ait hisseler.
